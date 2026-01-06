@@ -1,0 +1,6 @@
+let x = 21;
+let y = 39;
+let z = x;
+let w = y;
+
+exit z;

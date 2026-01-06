@@ -6,6 +6,7 @@
 #include<vector>
 #include<optional>
 #include<iostream>
+#include<variant>
 
 // local 
 #include "tokenizer.hh"
@@ -14,15 +15,34 @@
 // definitions
 namespace node {
 
-    struct Expr{
+    struct ExprIntLit {
         Token int_lit;
     };
 
-    struct Exit{
-        Expr expr;  
+    struct ExprIdent {
+        Token ident;
     };
 
-    
+    struct Expr{
+        std::variant<node::ExprIntLit, node::ExprIdent> var;
+    };
+
+    struct StmtLet {
+        Token ident;
+        node::Expr expr;
+    };
+
+    struct StmtExit{
+        node::Expr expr;  
+    };
+
+
+    struct Stmt {
+        std::variant<node::StmtExit, node::StmtLet> var;
+    };
+    struct Program {
+        std::vector<node::Stmt> statements;
+    };
 }
 
 
@@ -36,42 +56,79 @@ class Parser {
         std::optional<node::Expr> parse_expr(){
 
             if(peek().has_value() && peek().value().type == TokenType::int_lit){
-                return node::Expr{.int_lit = consume()} ;
-            }else{
+                return node::Expr{.var = node::ExprIntLit{.int_lit = consume()}} ;
+            }else if(peek().has_value() && peek().value().type == TokenType::ident){
+                return node::Expr{.var = node::ExprIdent{.ident = consume()}};
+            }
+            else{
                 return {};
             }
-
         }
 
-        std::optional<node::Exit> parse(){ // returns the ROOT NODE, refer to nodes/grammar.md to see why ours is what it is
-            std::optional<node::Exit> exit_node;
-            while(peek().has_value()){
-                if(peek().value().type == TokenType::exit){
-                    consume();
-                    if(auto node_expr = parse_expr() ){
-                        exit_node = node::Exit{.expr = node_expr.value() };
-                    }else{
-                        std::cerr << "Error in exit parsing" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
+        std::optional<node::Stmt> parse_stmt(){
+            if(peek().has_value() && peek().value().type == TokenType::exit
+            && peek(1).has_value() ){
+
+                consume();
+                node::StmtExit stmt_exit; 
+                if(auto node_expr = parse_expr() ){
+                    stmt_exit = node::StmtExit{.expr = node_expr.value()};
                 }
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
                 }else{
-                    std::cerr << "Error in parsing, maybe no semicolon?" << std::endl;
+                    std::cerr << "Expected ';' " << std::endl;
                     exit(EXIT_FAILURE);
                 }
-            } 
-            m_index = 0;
-            return exit_node;
+                return node::Stmt{.var = stmt_exit};
+
+            }else if(peek().has_value() && peek().value().type == TokenType::let 
+            && peek(1).has_value() && peek(1).value().type == TokenType::ident
+            && peek(2).has_value() && peek(2).value().type == TokenType::equal_sign){
+
+                // for var decl we check first three tokens lol really fat if statement
+                consume(); // consuming let
+                node::StmtLet stmt_let = node::StmtLet{.ident = consume() };
+                consume(); // consume eq
+                if(auto node_expr = parse_expr() ){
+                    stmt_let.expr = node_expr.value();
+                }else{
+                    std::cerr << "Invalid expr in variable assignment" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(peek().has_value() && peek().value().type == TokenType::semi){
+                    consume();
+                }else{
+                    std::cerr << "Expected semicolon" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                return node::Stmt{.var = stmt_let};
+
+            }else{
+                return {};
+            }
+            
+        }
+
+        std::optional<node::Program> parse_program(){
+            node::Program prog;
+            while(peek().has_value() ){
+                if(auto stmt = parse_stmt() ){
+                    prog.statements.push_back(stmt.value());
+                }else{
+                    std::cerr << "Error parsing statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+            return prog;
         }
 
     private:
-        [[nodiscard]] inline std::optional<Token> peek(int ahead = 1) const { 
-            if(m_index + ahead > m_tokens.size()){
+        [[nodiscard]] inline std::optional<Token> peek(int ahead = 0) const { 
+            if(m_index + ahead >= m_tokens.size()){
                 return {};
             }else{
-                return m_tokens.at(m_index);
+                return m_tokens.at(m_index + ahead);
             }
         }
 

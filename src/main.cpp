@@ -18,7 +18,7 @@ postc: outputs .s file into above file name or otherwise throws an error
 */
 int main(int argc, char* argv[]){
 	if(argc != 3){ // num args we use + 1
-		cerr << "Incorrect number of aargaaas" << endl;
+		cerr << "Incorrect number of args" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]){
 	vector<Token> tokens = tokenizer.tokenize();
 
 	Parser parser(std::move(tokens));
-	optional<node::Exit> ast = parser.parse();
+	optional<node::Program> ast = parser.parse_program();
 
 	if(!ast.has_value()){
 		cerr << "No exit statement found" << endl;
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){
 	Generator generator(ast.value());
 	{
 		fstream out(argv[2], ios::out); // open out .s file
-		out << generator.generate_asm();
+		out << generator.generate_asm_x86();
 		out.close();
 	}
 

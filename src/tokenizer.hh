@@ -11,7 +11,12 @@
 enum class TokenType {
 	exit,
 	int_lit,
-	semi
+	semi,
+    open_paren,
+    close_paren,
+    ident,
+    let,
+    equal_sign
 };
 
 typedef struct {
@@ -27,7 +32,7 @@ class Tokenizer {
         inline explicit Tokenizer(const std::string& src)
            : m_src(std::move(src))
            {
-
+                // constructor body empty as all our work (init members list) is done in decl
            }
 
            inline std::vector<Token> tokenize() {
@@ -45,11 +50,21 @@ class Tokenizer {
                             tokens.push_back({.type = TokenType::exit});
                             buf.clear();
                             continue;
-                        }else{
-                            std::cerr << "Error in keyword tokenization" << std::endl;
-                            std::cout << buf <<" | "<< buf.length() << std::endl;
-                            exit(EXIT_FAILURE);
+                        }else if(buf == "let"){
+                            tokens.push_back({.type = TokenType::let});
+                            buf.clear();
+                            continue;
                         }
+                        else{
+                            tokens.push_back({.type = TokenType::ident, .val = buf});
+                            buf.clear();
+                        }
+                        
+                        // else{
+                        //     std::cerr << "Error in keyword tokenization" << std::endl;
+                        //     std::cout << buf <<" | "<< buf.length() << std::endl;
+                        //     exit(EXIT_FAILURE);
+                        // }
 
                     }else if(std::isdigit(peek().value()) ){
                         buf.push_back(consume());
@@ -60,11 +75,23 @@ class Tokenizer {
                         buf.clear();
                         continue;
 
+                    }else if(peek().value() == '('){
+                        consume();
+                        tokens.push_back( {.type = TokenType::open_paren} );
+                        continue;
+                    }else if(peek().value() == ')'){
+                        consume();
+                        tokens.push_back( {.type = TokenType::close_paren });
+                        continue;
                     }else if(peek().value() == ';'){
-                        consume(); // make sure you consume every token so you move through the program properly
+                        consume(); // make sure you consume every token so you move through the program properly. semi lowk inconsequential
                         tokens.push_back( {.type=TokenType::semi} );
                         continue;
-
+                    }else if(peek().value() == '='){
+                        consume();
+                        tokens.push_back( {.type = TokenType::equal_sign});
+                        continue;
+                    
                     }else if(isspace(peek().value())){
                         consume();
                         continue;
@@ -79,17 +106,17 @@ class Tokenizer {
 
     private:
 
-        [[nodiscard]] inline std::optional<char> peek(int ahead = 1) const { 
+        [[nodiscard]] inline std::optional<char> peek(int ahead = 0) const { 
             /* 
             SUPER interesting method def, so let's break it down as this is for learning: 
             nodiscard means we get compilation warning if we don't use returned value. 
             ahead = 1 means it'll default to 1, but you can overload to specify how many values you want to peek ahead
             the const that follows means this is a CONSTANT method, it cant alter fields in the class
             */
-            if(m_index + ahead > m_src.length()){
+            if(m_index + ahead >= m_src.length()){
                 return {};
             }else{
-                return m_src.at(m_index);
+                return m_src.at(m_index + ahead);
             }
         }
 
