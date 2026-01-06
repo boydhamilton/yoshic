@@ -27,7 +27,8 @@ class Generator {
                     const auto& var = gen->m_vars.at(ident.ident.val.value());
                     // add location to stack pointer (rsp) 
                     std::stringstream ss; // so concat is easy between strings & numbers lol
-                    ss << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location -1) * 8 <<  "]";
+                    // ss << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location -1) * 8 <<  "]";
+                    ss << "QWORD [rbp -" << (var.stack_location+1)*8 << "]";
                     gen->push(ss.str());
                 }
 
@@ -74,6 +75,7 @@ class Generator {
         [[nodiscard]] std::string generate_asm_x86() {
 
             m_output << "global _start\n_start:\n";
+            m_output << "\tpush rbp\n\tmov rbp, rsp\n\n"; // prologue for rbp (fixed sp to calculate variable offsets from)
 
 
             for(const node::Stmt stmt : m_prog.statements){
@@ -82,7 +84,7 @@ class Generator {
 
             // this is default exit, runs if user does not specify 
             // if user does specify, obviously it'll just have exited previously
-            m_output << "\tmov rax, 60\n";
+            m_output << "\n\tmov rax, 60\n";
 			m_output << "\tmov rdi, 0\n";
 			m_output << "\tsyscall\n";
 
@@ -106,7 +108,7 @@ class Generator {
         
         const node::Program m_prog;
         std::stringstream m_output;
-        size_t m_stack_size;
+        size_t m_stack_size = 0;
 
         std::unordered_map<std::string, var> m_vars {};
 
