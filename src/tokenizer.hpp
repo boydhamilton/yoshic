@@ -16,7 +16,9 @@ enum class TokenType {
     close_paren,
     ident,
     let,
-    equal_sign
+    equal_sign,
+    plus,
+    multi
 };
 
 typedef struct {
@@ -92,7 +94,12 @@ class Tokenizer {
                         tokens.push_back( {.type = TokenType::equal_sign});
                         continue;
                     
-                    }else if(isspace(peek().value())){
+                    }else if(peek().value() == '+'){
+                        consume();
+                        tokens.push_back( {.type = TokenType::plus});
+                        continue;
+                    }
+                    else if(isspace(peek().value())){
                         consume();
                         continue;
                     }else{

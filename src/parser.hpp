@@ -16,16 +16,37 @@
 // definitions
 namespace node {
 
-    struct ExprIntLit {
+    struct TermIntLit {
         Token int_lit;
     };
 
-    struct ExprIdent {
+    struct TermIdent {
         Token ident;
     };
 
+    struct Expr;
+    struct BinExprAdd {
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
+
+    // struct BinExprMulti{
+    //     node::Expr* lhs;
+    //     node::Expr* rhs;
+    // };
+
+    struct BinExpr{
+        // std::variant<node::BinExprAdd*, node::BinExprMulti*> var;
+        node::BinExprAdd* var;
+    };
+
+
+    struct Term{
+        std::variant<node::TermIntLit*, node::TermIdent*> var;
+    };
+
     struct Expr{
-        std::variant<node::ExprIntLit*, node::ExprIdent*> var;
+        std::variant<node::Term*, node::BinExpr*> var;
     };
 
     struct StmtLet {
@@ -56,28 +77,61 @@ class Parser {
 
         }
 
-        std::optional<node::Expr*> parse_expr(){
+        
 
-            if(peek().has_value() && peek().value().type == TokenType::int_lit){
+        std::optional<node::Term*> parse_term(){
+             if(peek().has_value() && peek().value().type == TokenType::int_lit){
 
-                auto expr_int_lit = m_allocator.alloc<node::ExprIntLit>();
+                auto expr_int_lit = m_allocator.alloc<node::TermIntLit>();
                 expr_int_lit->int_lit = consume(); // structure is implicit in allocation
                 
-                auto expr = m_allocator.alloc<node::Expr>();
-                expr->var = expr_int_lit;
-                return expr;
+                auto term = m_allocator.alloc<node::Term>();
+                term->var = expr_int_lit;
+                return term;
 
             }else if(peek().has_value() && peek().value().type == TokenType::ident){
-                auto expr_ident = m_allocator.alloc<node::ExprIdent>();
+                auto expr_ident = m_allocator.alloc<node::TermIdent>();
                 expr_ident->ident = consume();
                 
-                auto expr = m_allocator.alloc<node::Expr>();
-                expr->var = expr_ident;
-                return expr;
+                auto term = m_allocator.alloc<node::Term>();
+                term->var = expr_ident;
+                return term;
             }
-            else{
+        }
+
+        std::optional<node::Expr*> parse_expr(){
+
+            if(auto term = parse_term()){
+                if(peek().has_value() && peek().value().type == TokenType::plus){
+                    auto bin_expr = m_allocator.alloc<node::BinExpr>();
+                    
+                    consume(); // consume + 
+                    auto bin_expr_add = m_allocator.alloc<node::BinExprAdd>();
+                    auto lhs = m_allocator.alloc<node::Expr>();
+                    lhs->var = term.value();
+                    bin_expr_add->lhs = lhs;
+
+                    if(auto rhs = parse_expr()){
+                        bin_expr_add->rhs = rhs.value();
+                        bin_expr->var = bin_expr_add;
+                        // this whole thing is gross but wtv fix it later
+                        auto expr = m_allocator.alloc<node::Expr>();
+                        expr->var = bin_expr;
+                        return expr;
+                    }else{
+                        std::cerr << "Expected rhs" << std::endl;
+                    }
+                    
+                }else{
+                    auto expr = m_allocator.alloc<node::Expr>();
+                    expr->var = term.value();
+                    return expr;
+                }
+            }else{
                 return {};
             }
+
+           
         }
 
         std::optional<node::Stmt*> parse_stmt(){
@@ -93,7 +147,7 @@ class Parser {
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
                 }else{
-                    std::cerr << "Expected ';' " << std::endl;
+                    std::cerr << "Expected ';' in statement exit" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 auto stmt = m_allocator.alloc<node::Stmt>();
@@ -113,13 +167,13 @@ class Parser {
                 if(auto node_expr = parse_expr() ){
                     stmt_let->expr = node_expr.value();
                 }else{
-                    std::cerr << "Invalid expr in variable assignment" << std::endl;
+                    std::cerr << "Invalid expr in statement let" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
                 }else{
-                    std::cerr << "Expected semicolon" << std::endl;
+                    std::cerr << "Expected ';' in statement let" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 auto stmt = m_allocator.alloc<node::Stmt>();

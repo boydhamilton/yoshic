@@ -14,12 +14,14 @@ class Generator {
 
         }
 
-       void generate_expr(const node::Expr* expr){
-            
-            struct expr_visitor{
-                Generator* gen;
-
-                void operator()(const node::ExprIdent* ident){
+        void generate_term(const node::Term* term){
+            struct term_visitor{
+                Generator* gen; 
+                void operator()(const node::TermIntLit* int_lit) const{
+                    gen->m_output << "\tmov rax, " << int_lit->int_lit.val.value() << "\n";
+                    gen->push("rax"); // push int lit onto the stack
+                }
+                void operator()(const node::TermIdent* ident) const {
                     if(gen->m_vars.find(ident->ident.val.value() ) == gen->m_vars.end() ){
                         std::cerr << "Undeclared identifier " << ident->ident.val.value() << std::endl;
                         exit(EXIT_FAILURE);
@@ -31,11 +33,29 @@ class Generator {
                     ss << "QWORD [rbp -" << (var.stack_location+1)*8 << "]";
                     gen->push(ss.str());
                 }
+            };
+            term_visitor visitor({.gen = this});
+            std::visit(visitor, term->var);
+        }
 
-                void operator()(const node::ExprIntLit* int_lit){
-                    gen->m_output << "\tmov rax, " << int_lit->int_lit.val.value() << "\n";
-                    gen->push("rax"); // push int lit onto the stack
-                    // gen->m_output << "\tpush rax\n"; 
+        void generate_expr(const node::Expr* expr){
+            
+            struct expr_visitor{
+                Generator* gen;
+
+                void operator()(const node::Term* term){
+                    gen->generate_term(term);
+                }
+
+                void operator()(const node::BinExpr* bin_expr){
+                    // both sides of bin expr on top of stack
+                    gen->generate_expr(bin_expr->var->lhs);
+                    gen->generate_expr(bin_expr->var->rhs);
+                    // now pop off stack into registers (put onto stack at first to hit rest of expr generation)
+                    gen->pop("rax");
+                    gen->pop("rbx");
+                    gen->m_output << "\tadd rax, rbx\n"; 
+                    gen->push("rax");
                 }
             };
 
