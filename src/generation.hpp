@@ -49,13 +49,24 @@ class Generator {
 
                 void operator()(const node::BinExpr* bin_expr){
                     // both sides of bin expr on top of stack
-                    gen->generate_expr(bin_expr->var->lhs);
-                    gen->generate_expr(bin_expr->var->rhs);
+                    if(auto* add = std::get_if<node::BinExprAdd*>(&bin_expr->var)){
+                        gen->generate_expr((*add)->lhs);
+                        gen->generate_expr((*add)->rhs);
+                         gen->pop("rax");
+                        gen->pop("rbx");
+                        gen->m_output << "\tadd rax, rbx\n"; 
+                        gen->push("rax");
+                    }else if(auto* multi = std::get_if<node::BinExprMulti*>(&bin_expr->var)){
+                        gen->generate_expr((*multi)->lhs);
+                        gen->generate_expr((*multi)->rhs);
+                         gen->pop("rax");
+                        gen->pop("rbx");
+                        gen->m_output << "\tmul rbx\n"; // x86 mul takes one opearand, assumes other is in rax
+                        gen->push("rax");
+                    }
+                    
                     // now pop off stack into registers (put onto stack at first to hit rest of expr generation)
-                    gen->pop("rax");
-                    gen->pop("rbx");
-                    gen->m_output << "\tadd rax, rbx\n"; 
-                    gen->push("rax");
+                   
                 }
             };
 

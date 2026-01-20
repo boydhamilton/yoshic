@@ -7,17 +7,18 @@ _start:
 	push rax
 	mov rax, 3
 	push rax
-	push QWORD [rbp -8]
 	push QWORD [rbp -16]
 	mov rax, 7
 	push rax
+	mov rax, 1
+	push rax
 	pop rax
 	pop rbx
 	add rax, rbx
 	push rax
 	pop rax
 	pop rbx
-	add rax, rbx
+	mul rbx
 	push rax
 	push QWORD [rbp -24]
 	mov rax, 60

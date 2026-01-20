@@ -98,6 +98,10 @@ class Tokenizer {
                         consume();
                         tokens.push_back( {.type = TokenType::plus});
                         continue;
+                    }else if(peek().value() == '*'){
+                        consume();
+                        tokens.push_back({.type = TokenType::multi});
+                        continue;
                     }
                     else if(isspace(peek().value())){
                         consume();

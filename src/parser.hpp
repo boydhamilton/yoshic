@@ -30,14 +30,14 @@ namespace node {
         node::Expr* rhs;
     };
 
-    // struct BinExprMulti{
-    //     node::Expr* lhs;
-    //     node::Expr* rhs;
-    // };
+    struct BinExprMulti{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
 
     struct BinExpr{
-        // std::variant<node::BinExprAdd*, node::BinExprMulti*> var;
-        node::BinExprAdd* var;
+        std::variant<node::BinExprAdd*, node::BinExprMulti*> var;
+        //node::BinExprAdd* var;
     };
 
 
@@ -122,7 +122,27 @@ class Parser {
                         std::cerr << "Expected rhs" << std::endl;
                     }
                     
-                }else{
+                }else if(peek().has_value() && peek().value().type == TokenType::multi){
+                    auto bin_expr = m_allocator.alloc<node::BinExpr>();
+                    consume(); // consume *
+                    auto bin_expr_add = m_allocator.alloc<node::BinExprMulti>();
+                    auto lhs = m_allocator.alloc<node::Expr>();
+                    lhs->var = term.value();
+                    bin_expr_add->lhs = lhs;
+
+                    if(auto rhs = parse_expr()){
+                        bin_expr_add->rhs = rhs.value();
+                        bin_expr->var = bin_expr_add;
+                        // this whole thing is gross but wtv fix it later
+                        auto expr = m_allocator.alloc<node::Expr>();
+                        expr->var = bin_expr;
+                        return expr;
+                    }else{
+                        std::cerr << "Expected rhs" << std::endl;
+                    }
+                }
+                
+                else{
                     auto expr = m_allocator.alloc<node::Expr>();
                     expr->var = term.value();
                     return expr;
