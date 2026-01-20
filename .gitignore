@@ -1,0 +1,5 @@
+
+*.ysh.o
+*.exe
+brhcc
+.vscode/*
