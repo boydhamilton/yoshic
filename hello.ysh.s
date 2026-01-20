@@ -8,11 +8,8 @@ _start:
 	mov rax, 39
 	push rax
 	push QWORD [rbp -8]
-
 	push QWORD [rbp -16]
-
 	push QWORD [rbp -24]
-
 	mov rax, 60
 	pop rdi
 	syscall

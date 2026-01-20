@@ -5,8 +5,8 @@
 #include<sstream>
 
 // local 
-#include "tokenizer.hh"
-#include "parser.hh"
+#include "tokenizer.hpp"
+#include "parser.hpp"
 #include "generation.hpp"
 
 using namespace std;

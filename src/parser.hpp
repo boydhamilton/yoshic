@@ -9,7 +9,8 @@
 #include<variant>
 
 // local 
-#include "tokenizer.hh"
+#include "tokenizer.hpp"
+#include "arena.hpp"
 
 
 // definitions
@@ -24,24 +25,24 @@ namespace node {
     };
 
     struct Expr{
-        std::variant<node::ExprIntLit, node::ExprIdent> var;
+        std::variant<node::ExprIntLit*, node::ExprIdent*> var;
     };
 
     struct StmtLet {
         Token ident;
-        node::Expr expr;
+        node::Expr* expr;
     };
 
     struct StmtExit{
-        node::Expr expr;  
+        node::Expr* expr;  
     };
 
 
     struct Stmt {
-        std::variant<node::StmtExit, node::StmtLet> var;
+        std::variant<node::StmtExit*, node::StmtLet*> var;
     };
     struct Program {
-        std::vector<node::Stmt> statements;
+        std::vector<node::Stmt*> statements;
     };
 }
 
@@ -49,30 +50,45 @@ namespace node {
 class Parser {
     public:
         inline explicit Parser(std::vector<Token> tokens)
-        : m_tokens(std::move(tokens)){
+            : m_tokens(std::move(tokens))
+            , m_allocator(1024 * 1024 * 4) // 4mb 
+        {
 
         }
 
-        std::optional<node::Expr> parse_expr(){
+        std::optional<node::Expr*> parse_expr(){
 
             if(peek().has_value() && peek().value().type == TokenType::int_lit){
-                return node::Expr{.var = node::ExprIntLit{.int_lit = consume()}} ;
+
+                auto expr_int_lit = m_allocator.alloc<node::ExprIntLit>();
+                expr_int_lit->int_lit = consume(); // structure is implicit in allocation
+                
+                auto expr = m_allocator.alloc<node::Expr>();
+                expr->var = expr_int_lit;
+                return expr;
+
             }else if(peek().has_value() && peek().value().type == TokenType::ident){
-                return node::Expr{.var = node::ExprIdent{.ident = consume()}};
+                auto expr_ident = m_allocator.alloc<node::ExprIdent>();
+                expr_ident->ident = consume();
+                
+                auto expr = m_allocator.alloc<node::Expr>();
+                expr->var = expr_ident;
+                return expr;
             }
             else{
                 return {};
             }
         }
 
-        std::optional<node::Stmt> parse_stmt(){
+        std::optional<node::Stmt*> parse_stmt(){
             if(peek().has_value() && peek().value().type == TokenType::exit
             && peek(1).has_value() ){
 
                 consume();
-                node::StmtExit stmt_exit; 
+                auto stmt_exit = m_allocator.alloc<node::StmtExit>();
+                
                 if(auto node_expr = parse_expr() ){
-                    stmt_exit = node::StmtExit{.expr = node_expr.value()};
+                    stmt_exit->expr=node_expr.value();
                 }
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
@@ -80,7 +96,10 @@ class Parser {
                     std::cerr << "Expected ';' " << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                return node::Stmt{.var = stmt_exit};
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_exit;
+                
+                return stmt;
 
             }else if(peek().has_value() && peek().value().type == TokenType::let 
             && peek(1).has_value() && peek(1).value().type == TokenType::ident
@@ -88,10 +107,11 @@ class Parser {
 
                 // for var decl we check first three tokens lol really fat if statement
                 consume(); // consuming let
-                node::StmtLet stmt_let = node::StmtLet{.ident = consume() };
+                auto stmt_let = m_allocator.alloc<node::StmtLet>();
+                stmt_let->ident = consume();
                 consume(); // consume eq
                 if(auto node_expr = parse_expr() ){
-                    stmt_let.expr = node_expr.value();
+                    stmt_let->expr = node_expr.value();
                 }else{
                     std::cerr << "Invalid expr in variable assignment" << std::endl;
                     exit(EXIT_FAILURE);
@@ -102,7 +122,9 @@ class Parser {
                     std::cerr << "Expected semicolon" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                return node::Stmt{.var = stmt_let};
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_let;
+                return stmt;
 
             }else{
                 return {};
@@ -137,5 +159,7 @@ class Parser {
         }
         const std::vector<Token> m_tokens;
         size_t m_index = 0; // size cause its index 
+
+        ArenaAllocator m_allocator; // oh blimey
 
 };
