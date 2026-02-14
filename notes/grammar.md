@@ -21,14 +21,16 @@ $$
 
     \text{[bin\_expr]} &\to \begin{cases}
         \text{[expr]} * \text{[expr]} & \text{precedence} = 1\\
+        \text{[expr] } / \text{ [expr]} & \text{precedence} = 1\\
         \text{[expr]} + \text{[expr]} & \text{precedence} = 0\\
-
+        \text{[expr]} - \text{[expr]} & \text{precedence} = 0\\
     \end{cases}
     \\
 
     \text{[term]} &\to \begin{cases}
         \text{int\_lit}\\
-        \text{ident}
+        \text{ident} \\
+        \text{([expr])}
     \end{cases}
     \\
 

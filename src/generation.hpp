@@ -33,6 +33,9 @@ class Generator {
                     ss << "QWORD [rbp -" << (var.stack_location+1)*8 << "]";
                     gen->push(ss.str());
                 }
+                void operator()(const node::TermParen* paren) const {
+                    gen->generate_expr(paren->expr);
+                }
             };
             term_visitor visitor({.gen = this});
             std::visit(visitor, term->var);

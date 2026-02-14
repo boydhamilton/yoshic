@@ -25,6 +25,11 @@ namespace node {
     };
 
     struct Expr;
+
+    struct TermParen {
+        node::Expr* expr; // parenthesized expression
+    };
+
     struct BinExprAdd {
         node::Expr* lhs;
         node::Expr* rhs;
@@ -50,7 +55,7 @@ namespace node {
 
 
     struct Term{
-        std::variant<node::TermIntLit*, node::TermIdent*> var;
+        std::variant<node::TermIntLit*, node::TermIdent*, node::TermParen*> var;
     };
 
     struct Expr{
@@ -104,6 +109,28 @@ class Parser {
                 auto term = m_allocator.alloc<node::Term>();
                 term->var = expr_ident;
                 return term;
+            }else if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                consume(); // consume open paren
+                auto term_paren = m_allocator.alloc<node::TermParen>();
+                if(auto node_expr = parse_expr() ){
+                    term_paren->expr=node_expr.value();
+                }else{
+                    std::cerr << "Invalid expr in term paren" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume(); // consume close paren
+                }else{
+                    std::cerr << "Expected ')'" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto term = m_allocator.alloc<node::Term>();
+                term->var = term_paren;
+                return term;
+                
+            }else{
+                return {};  
             }
         }
 

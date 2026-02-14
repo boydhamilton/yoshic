@@ -1,6 +1,5 @@
 
-let x = 100;
-let y = x / 5;
-let z = y + 9* 8 - 6/3;
+let x = (3 + 3 + 3 + 1) / 2;
+let y = x + 5;
 
-exit z + y/10;
+exit x;
