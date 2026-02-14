@@ -26,7 +26,26 @@ typedef struct {
 	std::optional<std::string> val;
 } Token;
 
+bool is_bin_op(TokenType type){
+    switch(type){
+        case TokenType::plus:
+        case TokenType::multi:
+            return true;
+        default:
+            return false;
+    }
+}
 
+std::optional<int> bin_prec(TokenType type){
+    switch(type){
+        case TokenType::plus:
+            return 0;
+        case TokenType::multi:
+            return 1;
+        default:
+            return {};
+    }
+}
 
 class Tokenizer {
 

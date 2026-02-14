@@ -99,59 +99,60 @@ class Parser {
             }
         }
 
-        std::optional<node::Expr*> parse_expr(){
-
-            if(auto term = parse_term()){
-                if(peek().has_value() && peek().value().type == TokenType::plus){
-                    auto bin_expr = m_allocator.alloc<node::BinExpr>();
-                    
-                    consume(); // consume + 
-                    auto bin_expr_add = m_allocator.alloc<node::BinExprAdd>();
-                    auto lhs = m_allocator.alloc<node::Expr>();
-                    lhs->var = term.value();
-                    bin_expr_add->lhs = lhs;
-
-                    if(auto rhs = parse_expr()){
-                        bin_expr_add->rhs = rhs.value();
-                        bin_expr->var = bin_expr_add;
-                        // this whole thing is gross but wtv fix it later
-                        auto expr = m_allocator.alloc<node::Expr>();
-                        expr->var = bin_expr;
-                        return expr;
-                    }else{
-                        std::cerr << "Expected rhs" << std::endl;
-                    }
-                    
-                }else if(peek().has_value() && peek().value().type == TokenType::multi){
-                    auto bin_expr = m_allocator.alloc<node::BinExpr>();
-                    consume(); // consume *
-                    auto bin_expr_add = m_allocator.alloc<node::BinExprMulti>();
-                    auto lhs = m_allocator.alloc<node::Expr>();
-                    lhs->var = term.value();
-                    bin_expr_add->lhs = lhs;
-
-                    if(auto rhs = parse_expr()){
-                        bin_expr_add->rhs = rhs.value();
-                        bin_expr->var = bin_expr_add;
-                        // this whole thing is gross but wtv fix it later
-                        auto expr = m_allocator.alloc<node::Expr>();
-                        expr->var = bin_expr;
-                        return expr;
-                    }else{
-                        std::cerr << "Expected rhs" << std::endl;
-                    }
-                }
-                
-                else{
-                    auto expr = m_allocator.alloc<node::Expr>();
-                    expr->var = term.value();
-                    return expr;
-                }
-            }else{
+        std::optional<node::Expr*> parse_expr(int min_prec = 0){
+            
+            std::optional<node::Term*> term_lhs = parse_term();
+            if(!term_lhs.has_value()){
                 return {};
             }
 
-           
+            auto expr_lhs = m_allocator.alloc<node::Expr>();
+            expr_lhs->var = term_lhs.value();
+
+            while(true){
+                std::optional<Token> curr_tok = peek();
+                std::optional<int> prec;
+                if(curr_tok.has_value()){
+                    prec = bin_prec(curr_tok->type);
+                    if(!prec.has_value() || prec.value() < min_prec){
+                        break;
+                    }
+                }else{
+                    break;
+                }
+
+                Token op = consume(); // + or * 
+                int next_min_prec = prec.value() + 1;
+                std::optional<node::Expr*> expr_rhs = parse_expr(next_min_prec);
+
+                if(!expr_rhs.has_value()){
+                    std::cerr << "Expected rhs in binary expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                auto expr = m_allocator.alloc<node::BinExpr>();
+                if(op.type == TokenType::plus){
+                    auto add = m_allocator.alloc<node::BinExprAdd>();
+                    add->lhs = expr_lhs;
+                    add->rhs = expr_rhs.value();
+                    expr->var = add;
+                }else if(op.type == TokenType::multi){
+                    auto multi = m_allocator.alloc<node::BinExprMulti>();
+                    multi->lhs = expr_lhs;
+                    multi->rhs = expr_rhs.value();
+                    expr->var = multi;
+                }else{
+                    std::cerr << "Expected binary operator" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                // wrapper kinda gross but fixed it
+                auto new_expr_lhs = m_allocator.alloc<node::Expr>();
+                new_expr_lhs->var = expr;
+                expr_lhs = new_expr_lhs; // now this whole expr becomes the lhs for the next iteration of the loop, allowing for left associativity
+
+            }
+            return expr_lhs;           
         }
 
         std::optional<node::Stmt*> parse_stmt(){
@@ -193,6 +194,7 @@ class Parser {
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
                 }else{
+                    std::cout << (int)peek().value().type << std::endl;
                     std::cerr << "Expected ';' in statement let" << std::endl;
                     exit(EXIT_FAILURE);
                 }

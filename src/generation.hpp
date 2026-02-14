@@ -52,14 +52,14 @@ class Generator {
                     if(auto* add = std::get_if<node::BinExprAdd*>(&bin_expr->var)){
                         gen->generate_expr((*add)->lhs);
                         gen->generate_expr((*add)->rhs);
-                         gen->pop("rax");
+                        gen->pop("rax");
                         gen->pop("rbx");
                         gen->m_output << "\tadd rax, rbx\n"; 
                         gen->push("rax");
                     }else if(auto* multi = std::get_if<node::BinExprMulti*>(&bin_expr->var)){
                         gen->generate_expr((*multi)->lhs);
                         gen->generate_expr((*multi)->rhs);
-                         gen->pop("rax");
+                        gen->pop("rax");
                         gen->pop("rbx");
                         gen->m_output << "\tmul rbx\n"; // x86 mul takes one opearand, assumes other is in rax
                         gen->push("rax");
