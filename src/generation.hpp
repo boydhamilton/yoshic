@@ -63,6 +63,24 @@ class Generator {
                         gen->pop("rbx");
                         gen->m_output << "\tmul rbx\n"; // x86 mul takes one opearand, assumes other is in rax
                         gen->push("rax");
+                    }else if(auto* sub = std::get_if<node::BinExprSub*>(&bin_expr->var)){
+                        gen->generate_expr((*sub)->lhs);
+                        gen->generate_expr((*sub)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\tsub rax, rbx\n"; 
+                        gen->push("rax");
+                    }else if(auto* div = std::get_if<node::BinExprDiv*>(&bin_expr->var)){
+                        gen->generate_expr((*div)->lhs);
+                        gen->generate_expr((*div)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\txor rdx, rdx\n"; // clear rdx for div, as it stores remainder and we only care about quotient
+                        gen->m_output << "\tdiv rbx\n"; // x86 div takes one operand, assumes other is in rax, quotient stored in rax after
+                        gen->push("rax");
+                    }else{
+                        std::cerr << "Invalid binary expression" << std::endl;
+                        exit(EXIT_FAILURE);
                     }
                     
                     // now pop off stack into registers (put onto stack at first to hit rest of expr generation)

@@ -29,14 +29,22 @@ namespace node {
         node::Expr* lhs;
         node::Expr* rhs;
     };
+    struct BinExprSub{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
 
     struct BinExprMulti{
         node::Expr* lhs;
         node::Expr* rhs;
     };
+    struct BinExprDiv{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
 
     struct BinExpr{
-        std::variant<node::BinExprAdd*, node::BinExprMulti*> var;
+        std::variant<node::BinExprAdd*, node::BinExprMulti*, node::BinExprSub*, node::BinExprDiv*> var;
         //node::BinExprAdd* var;
     };
 
@@ -141,6 +149,16 @@ class Parser {
                     multi->lhs = expr_lhs;
                     multi->rhs = expr_rhs.value();
                     expr->var = multi;
+                }else if(op.type == TokenType::sub){
+                    auto sub = m_allocator.alloc<node::BinExprSub>();
+                    sub->lhs = expr_lhs;
+                    sub->rhs = expr_rhs.value();
+                    expr->var = sub;
+                }else if(op.type == TokenType::div){
+                    auto div = m_allocator.alloc<node::BinExprDiv>();
+                    div->lhs = expr_lhs;
+                    div->rhs = expr_rhs.value();
+                    expr->var = div;    
                 }else{
                     std::cerr << "Expected binary operator" << std::endl;
                     exit(EXIT_FAILURE);

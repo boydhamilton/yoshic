@@ -18,7 +18,9 @@ enum class TokenType {
     let,
     equal_sign,
     plus,
-    multi
+    multi,
+    sub,
+    div
 };
 
 typedef struct {
@@ -38,8 +40,10 @@ bool is_bin_op(TokenType type){
 
 std::optional<int> bin_prec(TokenType type){
     switch(type){
+        case TokenType::sub:
         case TokenType::plus:
             return 0;
+        case TokenType::div:
         case TokenType::multi:
             return 1;
         default:
@@ -121,8 +125,15 @@ class Tokenizer {
                         consume();
                         tokens.push_back({.type = TokenType::multi});
                         continue;
-                    }
-                    else if(isspace(peek().value())){
+                    }else if(peek().value() == '-'){
+                        consume();
+                        tokens.push_back({.type = TokenType::sub});
+                        continue;
+                    }else if(peek().value() == '/'){
+                        consume();
+                        tokens.push_back({.type = TokenType::div});
+                        continue;
+                    }else if(isspace(peek().value())){
                         consume();
                         continue;
                     }else{
@@ -133,7 +144,7 @@ class Tokenizer {
                 return tokens;
 
            }
-
+        
     private:
 
         [[nodiscard]] inline std::optional<char> peek(int ahead = 0) const { 
