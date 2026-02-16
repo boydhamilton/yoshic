@@ -1,5 +1,9 @@
 
 
-let x = 123;
+{
+    let x =10;
+}
+
+let x = 100;
 
 exit x;

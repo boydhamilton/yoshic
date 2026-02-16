@@ -124,6 +124,7 @@ class Generator {
                     }
                     gen->m_vars.push_back( var{let->ident.val.value(), gen->m_stack_size});
                     gen->generate_expr(let->expr); // now evaluated value of expression is on the top of the stack, generate_expr puts on stack for us
+                    gen->m_output << "\tmov " << "QWORD [rbp - " << (gen->m_stack_size)*8 << "], rax\n";
                 }
                 void operator()(const node::StmtAssign* assign){
                     auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
@@ -190,12 +191,16 @@ class Generator {
 
         void end_scope(){
             if(m_scopes.empty()){
-                std::cerr << "No scope to end" << std::endl;
+                std::cerr << "Unexpected '}', no scope to end" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            size_t num_vars_to_pop = m_vars.size() - m_scopes.back();
-            m_scopes.pop_back();
-            m_vars.erase(m_vars.end() - num_vars_to_pop, m_vars.end()); // remove variables in current scope
+            size_t popcount = m_vars.size() - m_scopes.back();
+            m_output << "\tadd rsp, " << popcount*8 << "\n"; // move stack pointer back to dealloc variables in current scope, ts moves independant of rbp
+            m_stack_size -= popcount; 
+            for(int i=0; i<popcount; i++){
+                m_vars.pop_back();
+            }
+            m_scopes.pop_back(); // kill last scope
         }
 
         struct var {

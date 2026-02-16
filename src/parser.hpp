@@ -297,6 +297,17 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_scope;
                 return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::if_kw){
+                consume(); // consume if
+                if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                    consume(); // consume open paren
+                }else { 
+                    std::cerr << "Expected '(' after 'if'" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(auto expr = parse_expr() ){
+                    
+                }
             }
             
             else{
