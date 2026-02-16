@@ -1,8 +1,17 @@
 
-let x = 1;
+let x = 0;
 
 if( x ){
-    exit 8;
+    exit x;
 }
 
-exit 1;
+{
+    let y = 100;
+    if( y ){
+        x = x + y;
+    }   
+}
+
+if(x){
+    exit x;
+}

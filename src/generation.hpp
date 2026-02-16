@@ -155,8 +155,9 @@ class Generator {
 
                     gen->pop("rax"); // pop condition into rax
                     gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
-                    std::string else_label = "else_" + std::to_string(gen->m_stack_size); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
-                    std::string end_label = "end_if_" + std::to_string(gen->m_stack_size);
+                    std::string else_label = "else_" + std::to_string(gen->m_labelcount); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
+                    std::string end_label = "end_if_" + std::to_string(gen->m_labelcount);
+                    gen->m_labelcount++;
                     gen->m_output << "\tje " << else_label << "\n"; // jump to else block if condition is false (0)
                     
                     // if body
@@ -165,9 +166,9 @@ class Generator {
                     }
                     gen->m_output << "\tjmp " << end_label << "\n"; // jump to end of if after if body
                     
-                    // else body (empty for now, as we dont have else statements, but this is where it would go)
+                    // else body would go here
                     gen->m_output << else_label << ":\n";
-                    
+
                     gen->m_output << end_label << ":\n";
                 }
             };
@@ -232,6 +233,7 @@ class Generator {
         const node::Program m_prog;
         std::stringstream m_output;
         size_t m_stack_size = 0;
+        unsigned long m_labelcount = 0;
 
         std::vector<var> m_vars {};
 
