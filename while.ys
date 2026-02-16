@@ -1,0 +1,10 @@
+
+let x = 10;
+let y = 1;
+
+while( x ){
+    y = y * 2;
+    x = x-1;
+}
+
+exit y;

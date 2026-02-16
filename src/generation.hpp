@@ -155,8 +155,8 @@ class Generator {
 
                     gen->pop("rax"); // pop condition into rax
                     gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
-                    std::string else_label = "else_" + std::to_string(gen->m_labelcount); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
-                    std::string end_label = "end_if_" + std::to_string(gen->m_labelcount);
+                    std::string else_label = "else_l" + std::to_string(gen->m_labelcount); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
+                    std::string end_label = "end_if_l" + std::to_string(gen->m_labelcount);
                     gen->m_labelcount++;
                     gen->m_output << "\tje " << else_label << "\n"; // jump to else block if condition is false (0)
                     
@@ -170,6 +170,27 @@ class Generator {
                     gen->m_output << else_label << ":\n";
 
                     gen->m_output << end_label << ":\n";
+                }
+
+                void operator()(const node::StmtWhile* stmt_while){
+                    std::string loop_start_label = "while_loop_start_l" + std::to_string(gen->m_labelcount);
+                    std::string loop_end_label = "while_loop_end_l" + std::to_string(gen->m_labelcount);
+                    gen->m_labelcount++;
+
+                    gen->m_output << loop_start_label << ":\n";
+                    gen->generate_expr(stmt_while->condition); // condition on top of stack
+
+                    gen->pop("rax"); // pop condition into rax
+                    gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
+                    gen->m_output << "\tje " << loop_end_label << "\n"; // jump to end of loop if condition is false (0)
+                    
+                    // loop body
+                    for(const node::Stmt* stmt : stmt_while->body->statements){
+                        gen->generate_stmt(stmt);
+                    }
+                    gen->m_output << "\tjmp " << loop_start_label << "\n"; // jump back to start of loop to check condition again
+                    
+                    gen->m_output << loop_end_label << ":\n";
                 }
             };
             stmt_visitor visitor{.gen = this};

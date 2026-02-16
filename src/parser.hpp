@@ -87,10 +87,15 @@ namespace node {
         node::Scope* body;
     };    
 
+    struct StmtWhile{
+        node::Expr* condition;
+        node::Scope* body;
+    };
     
     struct Stmt {
         std::variant<node::StmtExit*, node::StmtLet*, 
-        node::StmtAssign*, node::Scope*, node::StmtIf*> var;
+        node::StmtAssign*, node::Scope*, node::StmtIf*,
+        node::StmtWhile*> var;
     };
 
     
@@ -362,9 +367,39 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_if;
                 return stmt;
-            }
-            
-            else{
+            }else if(peek().has_value() && peek().value().type == TokenType::while_kw){
+                consume(); // consume while
+                if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                    consume();
+                }else { 
+                    std::cerr << "Expected '(' after 'while'" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt_while = m_allocator.alloc<node::StmtWhile>();
+                if(auto expr = parse_expr() ){
+                    stmt_while->condition = expr.value();
+                }else{
+                    std::cerr << "Invalid condition expression in while statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume();
+                }else{
+                    std::cerr << "Expected ')' after condition in while statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                if(auto scope = parse_scope()){
+                    stmt_while->body = scope.value();
+                }else{
+                    std::cerr << "Invalid scope in if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_while;
+                return stmt;
+            }else{
                 return {};
             }
             

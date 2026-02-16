@@ -11,14 +11,13 @@ $$
         let \text{ ident} = \text{[expr]}; \\
         \text{ident} = \text{[expr]}; \\
         \{ \text{[stmt]}^+ \} \\
-        if(\text{[expr]}) \text{[scope]}
+        if(\text{[expr]}) \text{[scope]} \\
+        while(\text{[expr]}) \text{[scope]}
     \end{cases}
     \\
 
-    \text{[scope]} &\to 
-    \begin{cases}
+    \text{[scope]} &\to
         \{ \text{[stmt]}^+\}
-    \end{cases}
     \\
 
     \text{[expr]} &\to 
