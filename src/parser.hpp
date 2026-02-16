@@ -62,7 +62,14 @@ namespace node {
         std::variant<node::Term*, node::BinExpr*> var;
     };
 
+    struct Stmt;
+    
     struct StmtLet {
+        Token ident;
+        node::Expr* expr;
+    };
+
+    struct StmtAssign { // different because we have to check name conflicts at let
         Token ident;
         node::Expr* expr;
     };
@@ -71,9 +78,13 @@ namespace node {
         node::Expr* expr;  
     };
 
+    struct StmtScope{
+        std::vector<node::Stmt*> statements;
+    };
 
     struct Stmt {
-        std::variant<node::StmtExit*, node::StmtLet*> var;
+        std::variant<node::StmtExit*, node::StmtLet*, 
+        node::StmtAssign*, node::StmtScope*> var;
     };
     struct Program {
         std::vector<node::Stmt*> statements;
@@ -246,8 +257,50 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_let;
                 return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::ident
+            && peek(1).has_value() && peek(1).value().type == TokenType::equal_sign){
 
-            }else{
+                auto stmt_let = m_allocator.alloc<node::StmtAssign>();
+                stmt_let->ident = consume(); // consume ident
+                consume(); // consume eq
+                if(auto node_expr = parse_expr() ){
+                    stmt_let->expr = node_expr.value();
+                }else{
+                    std::cerr << "Invalid expr in statement assignment to " << stmt_let->ident.val.value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(peek().has_value() && peek().value().type == TokenType::semi){
+                    consume();
+                }else{
+                    std::cerr << "Expected ';' in statement assignment to " << stmt_let->ident.val.value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_let;
+                return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::open_curly){
+                consume(); // consume open curly
+                auto stmt_scope = m_allocator.alloc<node::StmtScope>();
+                while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                    if(auto node_stmt = parse_stmt() ){
+                        stmt_scope->statements.push_back(node_stmt.value());
+                    }else{
+                        std::cerr << "Invalid statement in scope" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                if(peek().has_value() && peek().value().type == TokenType::close_curly){
+                    consume(); // consume close curly
+                }else{
+                    std::cerr << "Expected '}' at end of scope" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_scope;
+                return stmt;
+            }
+            
+            else{
                 return {};
             }
             

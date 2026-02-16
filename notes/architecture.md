@@ -5,3 +5,7 @@
 - cant pop off stack unless its on top, but we can peek at it 
 - then, copy the value and push the copy onto top of the stack so some statement could use it (pop it)
 - we use our own push and pop methods for registers so we can track stack size
+
+
+## scope
+- vector of variables, so can linear search & get location to do math to find position in stack & frame it up ig ?!?

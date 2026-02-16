@@ -9,6 +9,10 @@ $$
     \begin{cases}
         exit \text{ [expr]}; \\
         let \text{ ident} = \text{[expr]}; \\
+        \text{ident} = \text{[expr]}; \\
+        \{ \text{[stmt]}^+ \} \\
+        if (\text{ [term] } )\\
+        while (\text{ [term] } )\\
     \end{cases}
     \\
 

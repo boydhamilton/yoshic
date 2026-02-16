@@ -20,7 +20,9 @@ enum class TokenType {
     plus,
     multi,
     sub,
-    div
+    div,
+    open_curly,
+    close_curly
 };
 
 typedef struct {
@@ -133,11 +135,21 @@ class Tokenizer {
                         consume();
                         tokens.push_back({.type = TokenType::div});
                         continue;
-                    }else if(isspace(peek().value())){
+                    }else if(peek().value() == '{'){
+                        consume();
+                        tokens.push_back({.type = TokenType::open_curly});
+                        continue;
+                    }else if(peek().value() == '}'){
+                        consume();
+                        tokens.push_back({.type = TokenType::close_curly});
+                        continue;
+                    }
+                    else if(isspace(peek().value())){
                         consume();
                         continue;
                     }else{
                         std::cerr << "Error in typewise tokenization" << std::endl;
+                        exit(EXIT_FAILURE);
                     }
                 }
                 m_index = 0; // reset

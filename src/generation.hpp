@@ -3,6 +3,7 @@
 
 #include<sstream>
 #include<unordered_map>
+#include<algorithm>
 
 #include "parser.hpp"
 
@@ -22,15 +23,19 @@ class Generator {
                     gen->push("rax"); // push int lit onto the stack
                 }
                 void operator()(const node::TermIdent* ident) const {
-                    if(gen->m_vars.find(ident->ident.val.value() ) == gen->m_vars.end() ){
-                        std::cerr << "Undeclared identifier " << ident->ident.val.value() << std::endl;
+
+                    auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
+                        [ident](const var& v) { return v.name == ident->ident.val.value(); });
+                    if(it == gen->m_vars.end()){
+                        std::cerr << "Identifier " << ident->ident.val.value() << " undeclared" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    const auto& var = gen->m_vars.at(ident->ident.val.value());
+                    
+                    const auto& var = *it; // know it isnt end cause we would terminate
                     // add location to stack pointer (rsp) 
                     std::stringstream ss; // so concat is easy between strings & numbers lol
                     // ss << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location -1) * 8 <<  "]";
-                    ss << "QWORD [rbp -" << (var.stack_location+1)*8 << "]";
+                    ss << "QWORD [rbp - " << (var.stack_location+1)*8 << "]";
                     gen->push(ss.str());
                 }
                 void operator()(const node::TermParen* paren) const {
@@ -105,18 +110,44 @@ class Generator {
                 void operator()(const node::StmtExit* exit){
                     gen->generate_expr(exit->expr);
 
-                    gen->m_output << "\tmov rax, 60\n";
-                    //gen->m_output << "\tpop rdi\n"; 
+                    gen->m_output << "\tmov rax, 60\n"; // exit syscall 
                     gen->pop("rdi"); // pop top of stack, as that should contain the expr we want to pass to exit
                     gen->m_output << "\tsyscall\n";
                 }
                 void operator()(const node::StmtLet* let){
-                    if(gen->m_vars.find(let->ident.val.value()) != gen->m_vars.end() ){
-                        std::cerr << "Identifier " << let->ident.val.value() << " already used" << std::endl;
+                    auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
+                        [let](const var& v) { 
+                            return v.name == let->ident.val.value(); 
+                        });
+                    if(it != gen->m_vars.end()){
+                        std::cerr << "Identifier " << let->ident.val.value() << " previously defined" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    gen->m_vars.insert( {let->ident.val.value(), var {.stack_location = gen->m_stack_size} } );
+                    gen->m_vars.push_back( var{let->ident.val.value(), gen->m_stack_size});
                     gen->generate_expr(let->expr); // now evaluated value of expression is on the top of the stack, generate_expr puts on stack for us
+                }
+                void operator()(const node::StmtAssign* assign){
+                    auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
+                        [assign](const var& v) { return v.name == assign->ident.val.value(); });
+                    if(it == gen->m_vars.end()){
+                        std::cerr << "Identifier " << assign->ident.val.value() << " not previously defined" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    gen->generate_expr(assign->expr); // top of stack 
+                    
+                    gen->pop("rax"); // pop new value into rax
+                    gen->m_output << "\tmov " << "QWORD [rbp - " << ((*it).stack_location+1)*8 << "], rax\n"; // move rax into stack location for variable
+                
+                }
+
+                void operator()(const node::StmtScope* scope){
+                    gen->begin_scope();
+
+                    for(const node::Stmt* stmt : scope->statements){
+                        gen->generate_stmt(stmt);
+                    }
+
+                    gen->end_scope();
                 }
             };
             stmt_visitor visitor{.gen = this};
@@ -154,7 +185,22 @@ class Generator {
             m_stack_size--;
         }
 
+        void begin_scope(){
+            m_scopes.push_back(m_vars.size()); // push current number of variables, so we know how many to pop off when we end scope
+        }
+        
+        void end_scope(){
+            if(m_scopes.empty()){
+                std::cerr << "No scope to end" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            size_t num_vars_to_pop = m_vars.size() - m_scopes.back();
+            m_scopes.pop_back();
+            m_vars.erase(m_vars.end() - num_vars_to_pop, m_vars.end()); // remove variables in current scope
+        }
+
         struct var {
+            std::string name;
             size_t stack_location;
         };
         
@@ -162,6 +208,8 @@ class Generator {
         std::stringstream m_output;
         size_t m_stack_size = 0;
 
-        std::unordered_map<std::string, var> m_vars {};
+        std::vector<var> m_vars {};
+
+        std::vector<size_t> m_scopes; // indicies of variables array
 
 };
