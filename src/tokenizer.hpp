@@ -24,7 +24,8 @@ enum class TokenType {
     open_curly,
     close_curly,
     if_kw,
-    while_kw
+    while_kw,
+    exclaim
 };
 
 typedef struct {
@@ -152,6 +153,10 @@ class Tokenizer {
                     }else if(peek().value() == '}'){
                         consume();
                         tokens.push_back({.type = TokenType::close_curly});
+                        continue;
+                    }else if(peek().value() == '!'){
+                        consume();
+                        tokens.push_back({.type = TokenType::exclaim});
                         continue;
                     }
                     else if(isspace(peek().value())){
