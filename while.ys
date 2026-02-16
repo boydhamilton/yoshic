@@ -1,11 +1,39 @@
 
-let y = 10;
+let right = 100;
+let left = 0;
+let x = 49;
 
-let i = 9;
+let mid = 0;
 
-while( i ){
-	y = -y;
-	i = i-1;
+while (left < right) {
+
+    mid = left + (right - left) / 2;
+
+    if ( !(mid - x) ) {
+        exit mid;
+    }
+
+    if (mid < x) {
+        left = mid + 1;
+    }
+	if (mid > x){
+        right = mid - 1;
+    }
 }
 
-exit y;
+if( !(left - right) ){
+	mid = left + (right - left) / 2;
+
+    if ( !(mid - x) ) {
+        exit mid;
+    }
+
+    if (mid < x) {
+        left = mid + 1;
+    }
+	if (mid > x){
+        right = mid - 1;
+    }
+}
+
+exit -1;

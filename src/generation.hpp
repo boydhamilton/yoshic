@@ -100,7 +100,26 @@ class Generator {
                         gen->m_output << "\txor rdx, rdx\n"; // clear rdx for div, as it stores remainder and we only care about quotient
                         gen->m_output << "\tdiv rbx\n"; // x86 div takes one operand, assumes other is in rax, quotient stored in rax after
                         gen->push("rax");
-                    }else{
+                    }else if(auto* gt = std::get_if<node::BinExprGt*>(&bin_expr->var)){
+                        gen->generate_expr((*gt)->lhs);
+                        gen->generate_expr((*gt)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\tcmp rax, rbx\n";
+                        gen->m_output << "\tsetg al\n"; // set al to 1 if rax > rbx, else set to 0
+                        gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax
+                        gen->push("rax");
+                    }else if(auto* lt = std::get_if<node::BinExprLt*>(&bin_expr->var)){
+                        gen->generate_expr((*lt)->lhs);
+                        gen->generate_expr((*lt)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\tcmp rax, rbx\n";
+                        gen->m_output << "\tsetl al\n"; // set al to 1 if rax < rbx, else set to 0
+                        gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax
+                        gen->push("rax");
+                    }
+                    else{
                         std::cerr << "Invalid binary expression" << std::endl;
                         exit(EXIT_FAILURE);
                     }

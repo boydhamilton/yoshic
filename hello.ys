@@ -1,23 +1,8 @@
 
-
 let retval = 1;
 
-if(retval - 1){
-    exit retval;
+while(retval){
+    retval = retval -1;
 }
 
-{
-    let x = (9* (4-2) ) * 3;
-    let y = x*x*x;
-    let z = y / (x+x);
-    retval = retval + z;
-}
-
-if( retval / 100){
-    if( retval / 1000 ){
-        exit retval - 1000;
-    }
-    exit retval - 100;
-}
-
-exit 0-1;
+exit retval - 1;

@@ -25,7 +25,9 @@ enum class TokenType {
     close_curly,
     if_kw,
     while_kw,
-    exclaim
+    exclaim,
+    greaterthan,
+    lessthan
 };
 
 typedef struct {
@@ -45,6 +47,9 @@ bool is_bin_op(TokenType type){
 
 std::optional<int> bin_prec(TokenType type){
     switch(type){
+        case TokenType::greaterthan:
+        case TokenType::lessthan:
+            return -1;
         case TokenType::sub:
         case TokenType::plus:
             return 0;
@@ -157,6 +162,14 @@ class Tokenizer {
                     }else if(peek().value() == '!'){
                         consume();
                         tokens.push_back({.type = TokenType::exclaim});
+                        continue;
+                    }else if(peek().value() == '>'){
+                        consume();
+                        tokens.push_back({.type = TokenType::greaterthan});
+                        continue;
+                    }else if(peek().value() == '<'){
+                        consume();
+                        tokens.push_back({.type = TokenType::lessthan});
                         continue;
                     }
                     else if(isspace(peek().value())){

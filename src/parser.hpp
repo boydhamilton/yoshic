@@ -65,8 +65,19 @@ namespace node {
         node::Expr* rhs;
     };
 
+    struct BinExprGt{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
+
+    struct BinExprLt{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
+
     struct BinExpr{
-        std::variant<node::BinExprAdd*, node::BinExprMulti*, node::BinExprSub*, node::BinExprDiv*> var;
+        std::variant<node::BinExprAdd*, node::BinExprMulti*, node::BinExprSub*, node::BinExprDiv*,
+        node::BinExprGt*, node::BinExprLt*> var;
         //node::BinExprAdd* var;
     };
 
@@ -190,7 +201,7 @@ class Parser {
             }
         }
 
-        std::optional<node::Expr*> parse_expr(int min_prec = 0){
+        std::optional<node::Expr*> parse_expr(int min_prec = -1){
             
             std::optional<node::Term*> term_lhs = parse_term();
             if(!term_lhs.has_value()){
@@ -212,7 +223,7 @@ class Parser {
                     break;
                 }
 
-                Token op = consume(); // + or * 
+                Token op = consume(); // consume operator 
                 int next_min_prec = prec.value() + 1;
                 std::optional<node::Expr*> expr_rhs = parse_expr(next_min_prec);
 
@@ -242,7 +253,19 @@ class Parser {
                     div->lhs = expr_lhs;
                     div->rhs = expr_rhs.value();
                     expr->var = div;    
-                }else{
+                }else if(op.type == TokenType::greaterthan){
+                    auto gt = m_allocator.alloc<node::BinExprGt>();
+                    gt->lhs = expr_lhs;
+                    gt->rhs = expr_rhs.value();
+                    expr->var = gt;
+                }else if(op.type == TokenType::lessthan){
+                    auto lt = m_allocator.alloc<node::BinExprLt>();
+                    lt->lhs = expr_lhs;
+                    lt->rhs = expr_rhs.value();
+                    expr->var = lt;
+                }
+                
+                else{
                     std::cerr << "Expected binary operator" << std::endl;
                     exit(EXIT_FAILURE);
                 }
@@ -417,6 +440,8 @@ class Parser {
                 if(peek().has_value() && peek().value().type == TokenType::close_paren){
                     consume();
                 }else{
+                    if(peek().has_value())
+                        std::cerr <<"got "<< (int)peek().value().type << std::endl;
                     std::cerr << "Expected ')' after condition in while statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
