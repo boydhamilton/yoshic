@@ -78,17 +78,26 @@ namespace node {
         node::Expr* expr;  
     };
 
-    struct StmtScope{
+    struct Scope{
         std::vector<node::Stmt*> statements;
     };
 
+    struct StmtIf{
+        node::Expr* condition;
+        node::Scope* body;
+    };    
+
+    
     struct Stmt {
         std::variant<node::StmtExit*, node::StmtLet*, 
-        node::StmtAssign*, node::StmtScope*> var;
+        node::StmtAssign*, node::Scope*, node::StmtIf*> var;
     };
+
+    
+
     struct Program {
         std::vector<node::Stmt*> statements;
-    };
+    };   
 }
 
 
@@ -211,6 +220,30 @@ class Parser {
             return expr_lhs;           
         }
 
+        std::optional<node::Scope*> parse_scope(){
+            if(peek().has_value() && peek().value().type == TokenType::open_curly){
+                consume(); // consume open curly
+                auto scope = m_allocator.alloc<node::Scope>();
+                while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                    if(auto node_stmt = parse_stmt() ){
+                        scope->statements.push_back(node_stmt.value());
+                    }else{
+                        std::cerr << "Invalid statement in scope" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                if(peek().has_value() && peek().value().type == TokenType::close_curly){
+                    consume(); // consume close curly
+                }else{
+                    std::cerr << "Expected '}' at end of scope" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                return scope;
+            }else{
+                return {};
+            }
+        }
+
         std::optional<node::Stmt*> parse_stmt(){
             if(peek().has_value() && peek().value().type == TokenType::exit
             && peek(1).has_value() ){
@@ -279,7 +312,7 @@ class Parser {
                 return stmt;
             }else if(peek().has_value() && peek().value().type == TokenType::open_curly){
                 consume(); // consume open curly
-                auto stmt_scope = m_allocator.alloc<node::StmtScope>();
+                auto stmt_scope = m_allocator.alloc<node::Scope>();
                 while(peek().has_value() && peek().value().type != TokenType::close_curly){
                     if(auto node_stmt = parse_stmt() ){
                         stmt_scope->statements.push_back(node_stmt.value());
@@ -296,6 +329,38 @@ class Parser {
                 }
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_scope;
+                return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::if_kw){
+                consume(); // consume if
+                if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                    consume();
+                }else { 
+                    std::cerr << "Expected '(' after 'if'" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt_if = m_allocator.alloc<node::StmtIf>();
+                if(auto expr = parse_expr() ){
+                    stmt_if->condition = expr.value();
+                }else{
+                    std::cerr << "Invalid condition expression in if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume();
+                }else{
+                    std::cerr << "Expected ')' after condition in if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                if(auto scope = parse_scope()){
+                    stmt_if->body = scope.value();
+                }else{
+                    std::cerr << "Invalid scope in if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_if;
                 return stmt;
             }
             

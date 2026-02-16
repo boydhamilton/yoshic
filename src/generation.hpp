@@ -124,6 +124,7 @@ class Generator {
                     }
                     gen->m_vars.push_back( var{let->ident.val.value(), gen->m_stack_size});
                     gen->generate_expr(let->expr); // now evaluated value of expression is on the top of the stack, generate_expr puts on stack for us
+                    gen->m_output << "\tmov " << "QWORD [rbp - " << (gen->m_stack_size)*8 << "], rax\n";
                 }
                 void operator()(const node::StmtAssign* assign){
                     auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
@@ -139,7 +140,7 @@ class Generator {
                 
                 }
 
-                void operator()(const node::StmtScope* scope){
+                void operator()(const node::Scope* scope){
                     gen->begin_scope();
 
                     for(const node::Stmt* stmt : scope->statements){
@@ -147,6 +148,28 @@ class Generator {
                     }
 
                     gen->end_scope();
+                }
+
+                void operator()(const node::StmtIf* stmt_if){
+                    gen->generate_expr(stmt_if->condition); // condition on top of stack
+
+                    gen->pop("rax"); // pop condition into rax
+                    gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
+                    std::string else_label = "else_" + std::to_string(gen->m_labelcount); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
+                    std::string end_label = "end_if_" + std::to_string(gen->m_labelcount);
+                    gen->m_labelcount++;
+                    gen->m_output << "\tje " << else_label << "\n"; // jump to else block if condition is false (0)
+                    
+                    // if body
+                    for(const node::Stmt* stmt : stmt_if->body->statements){
+                        gen->generate_stmt(stmt);
+                    }
+                    gen->m_output << "\tjmp " << end_label << "\n"; // jump to end of if after if body
+                    
+                    // else body would go here
+                    gen->m_output << else_label << ":\n";
+
+                    gen->m_output << end_label << ":\n";
                 }
             };
             stmt_visitor visitor{.gen = this};
@@ -190,12 +213,16 @@ class Generator {
 
         void end_scope(){
             if(m_scopes.empty()){
-                std::cerr << "No scope to end" << std::endl;
+                std::cerr << "Unexpected '}', no scope to end" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            size_t num_vars_to_pop = m_vars.size() - m_scopes.back();
-            m_scopes.pop_back();
-            m_vars.erase(m_vars.end() - num_vars_to_pop, m_vars.end()); // remove variables in current scope
+            size_t popcount = m_vars.size() - m_scopes.back();
+            m_output << "\tadd rsp, " << popcount*8 << "\n"; // move stack pointer back to dealloc variables in current scope, ts moves independant of rbp
+            m_stack_size -= popcount; 
+            for(int i=0; i<popcount; i++){
+                m_vars.pop_back();
+            }
+            m_scopes.pop_back(); // kill last scope
         }
 
         struct var {
@@ -206,6 +233,7 @@ class Generator {
         const node::Program m_prog;
         std::stringstream m_output;
         size_t m_stack_size = 0;
+        unsigned long m_labelcount = 0;
 
         std::vector<var> m_vars {};
 

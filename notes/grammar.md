@@ -11,15 +11,20 @@ $$
         let \text{ ident} = \text{[expr]}; \\
         \text{ident} = \text{[expr]}; \\
         \{ \text{[stmt]}^+ \} \\
-        if (\text{ [term] } )\\
-        while (\text{ [term] } )\\
+        if(\text{[expr]}) \text{[scope]}
+    \end{cases}
+    \\
+
+    \text{[scope]} &\to 
+    \begin{cases}
+        \{ \text{[stmt]}^+\}
     \end{cases}
     \\
 
     \text{[expr]} &\to 
     \begin{cases}
         \text{[term]}\\
-        \text{[bin\_expr]}
+        \text{[bin\_expr]} \\
     \end{cases}
     \\
 
@@ -37,6 +42,13 @@ $$
         \text{([expr])}
     \end{cases}
     \\
+
+    \text{[conditional]} &\to \begin{cases}
+        \text{[expr] } == \text{ [expr]} \\
+        \text{[expr] } != \text{ [expr]} \\
+    \end{cases}
+    \\
+
 
 \end{align}
 $$

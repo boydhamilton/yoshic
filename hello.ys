@@ -1,5 +1,17 @@
 
+let x = 0;
 
-let x = 123;
+if( x ){
+    exit x;
+}
 
-exit x;
+{
+    let y = 100;
+    if( y ){
+        x = x + y;
+    }   
+}
+
+if(x){
+    exit x;
+}
