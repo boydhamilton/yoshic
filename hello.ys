@@ -1,5 +1,7 @@
 
-if(1){
+let x = 1;
+
+if( x ){
     exit 8;
 }
 

@@ -345,11 +345,11 @@ class Parser {
                     std::cerr << "Invalid condition expression in if statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-
-                if(peek().has_value() && peek().value().type == TokenType::open_paren){
-                    consume(); // consume open paren
-                }else { 
-                    std::cerr << "Expected '(' after 'if'" << std::endl;
+                
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume();
+                }else{
+                    std::cerr << "Expected ')' after condition in if statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
 
