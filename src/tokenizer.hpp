@@ -22,7 +22,9 @@ enum class TokenType {
     sub,
     div,
     open_curly,
-    close_curly
+    close_curly,
+    if_kw,
+    while_kw
 };
 
 typedef struct {
@@ -79,6 +81,14 @@ class Tokenizer {
                             continue;
                         }else if(buf == "let"){
                             tokens.push_back({.type = TokenType::let});
+                            buf.clear();
+                            continue;
+                        }else if(buf == "if"){
+                            tokens.push_back({.type = TokenType::if_kw});
+                            buf.clear();
+                            continue;
+                        }else if(buf == "while"){
+                            tokens.push_back({.type = TokenType::while_kw});
                             buf.clear();
                             continue;
                         }

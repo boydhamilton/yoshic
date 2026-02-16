@@ -98,7 +98,6 @@ class Generator {
 
             expr_visitor visitor{.gen = this};
             std::visit(visitor, expr->var);
-
         }
 
         void generate_stmt(const node::Stmt* stmt ) {
@@ -188,7 +187,7 @@ class Generator {
         void begin_scope(){
             m_scopes.push_back(m_vars.size()); // push current number of variables, so we know how many to pop off when we end scope
         }
-        
+
         void end_scope(){
             if(m_scopes.empty()){
                 std::cerr << "No scope to end" << std::endl;

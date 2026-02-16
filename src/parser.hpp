@@ -250,7 +250,6 @@ class Parser {
                 if(peek().has_value() && peek().value().type == TokenType::semi){
                     consume();
                 }else{
-                    std::cout << (int)peek().value().type << std::endl;
                     std::cerr << "Expected ';' in statement let" << std::endl;
                     exit(EXIT_FAILURE);
                 }
