@@ -9,3 +9,7 @@
 
 ## scope
 - vector of variables, so can linear search & get location to do math to find position in stack & frame it up ig ?!?
+
+## std lib
+- this is my next step, we need to have i/o, and hence must interface with os. best way to do this is probably compile time link against libc and then have some wrapper around those calls? 
+- generation & build time call. this is probably a good opportunity to look more at build system for ts 
