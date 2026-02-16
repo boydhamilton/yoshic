@@ -1,9 +1,6 @@
 
-
-{
-    let x =10;
+if(1){
+    exit 8;
 }
 
-let x = 100;
-
-exit x;
+exit 1;

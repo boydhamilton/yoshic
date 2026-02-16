@@ -140,7 +140,7 @@ class Generator {
                 
                 }
 
-                void operator()(const node::StmtScope* scope){
+                void operator()(const node::Scope* scope){
                     gen->begin_scope();
 
                     for(const node::Stmt* stmt : scope->statements){
@@ -148,6 +148,27 @@ class Generator {
                     }
 
                     gen->end_scope();
+                }
+
+                void operator()(const node::StmtIf* stmt_if){
+                    gen->generate_expr(stmt_if->condition); // condition on top of stack
+
+                    gen->pop("rax"); // pop condition into rax
+                    gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
+                    std::string else_label = "else_" + std::to_string(gen->m_stack_size); // unique label for else block, can be based on stack size as it changes with each new scope/variable declaration
+                    std::string end_label = "end_if_" + std::to_string(gen->m_stack_size);
+                    gen->m_output << "\tje " << else_label << "\n"; // jump to else block if condition is false (0)
+                    
+                    // if body
+                    for(const node::Stmt* stmt : stmt_if->body->statements){
+                        gen->generate_stmt(stmt);
+                    }
+                    gen->m_output << "\tjmp " << end_label << "\n"; // jump to end of if after if body
+                    
+                    // else body (empty for now, as we dont have else statements, but this is where it would go)
+                    gen->m_output << else_label << ":\n";
+                    
+                    gen->m_output << end_label << ":\n";
                 }
             };
             stmt_visitor visitor{.gen = this};

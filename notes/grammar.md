@@ -11,9 +11,13 @@ $$
         let \text{ ident} = \text{[expr]}; \\
         \text{ident} = \text{[expr]}; \\
         \{ \text{[stmt]}^+ \} \\
-        if (\text{ [term] } )\\
-        while (\text{ [term] } )\\
-        \text{[conditional]}
+        if(\text{[expr]}) \text{[scope]}
+    \end{cases}
+    \\
+
+    \text{[scope]} &\to 
+    \begin{cases}
+        \{ \text{[stmt]}^+\}
     \end{cases}
     \\
 
