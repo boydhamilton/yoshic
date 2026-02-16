@@ -1,17 +1,23 @@
 
-let x = 0;
 
-if( x ){
-    exit x;
+let retval = 1;
+
+if(retval - 1){
+    exit retval;
 }
 
 {
-    let y = 100;
-    if( y ){
-        x = x + y;
-    }   
+    let x = (9* (4-2) ) * 3;
+    let y = x*x*x;
+    let z = y / (x+x);
+    retval = retval + z;
 }
 
-if(x){
-    exit x;
+if( retval / 100){
+    if( retval / 1000 ){
+        exit retval - 1000;
+    }
+    exit retval - 100;
 }
+
+exit 0-1;
