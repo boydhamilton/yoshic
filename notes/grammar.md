@@ -35,10 +35,17 @@ $$
     \end{cases}
     \\
 
+    \text{[unary\_expr]} &\to \begin{cases}
+        !\text{[term]}\\
+        -\text{[term]}
+    \end{cases}
+    \\
+
     \text{[term]} &\to \begin{cases}
         \text{int\_lit}\\
         \text{ident} \\
-        \text{([expr])}
+        \text{([expr])} \\
+        \text{[unary\_expr]}
     \end{cases}
     \\
 

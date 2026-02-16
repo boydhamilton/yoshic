@@ -30,6 +30,23 @@ namespace node {
         node::Expr* expr; // parenthesized expression
     };
 
+    struct Term;
+
+    struct TermExclaim {
+        node::Term* term; // !term
+    };
+
+    struct TermNegate {
+        node::Term* term; // -term
+    };
+    
+
+    struct Term{
+        std::variant<node::TermIntLit*, 
+        node::TermIdent*, node::TermParen*,
+        node::TermExclaim*, node::TermNegate*> var;
+    };
+
     struct BinExprAdd {
         node::Expr* lhs;
         node::Expr* rhs;
@@ -51,11 +68,6 @@ namespace node {
     struct BinExpr{
         std::variant<node::BinExprAdd*, node::BinExprMulti*, node::BinExprSub*, node::BinExprDiv*> var;
         //node::BinExprAdd* var;
-    };
-
-
-    struct Term{
-        std::variant<node::TermIntLit*, node::TermIdent*, node::TermParen*> var;
     };
 
     struct Expr{
@@ -153,8 +165,27 @@ class Parser {
                 auto term = m_allocator.alloc<node::Term>();
                 term->var = term_paren;
                 return term;
-                
-            }else{
+            }else if(peek().has_value() && peek().value().type == TokenType::exclaim){
+                consume(); // consume !
+                if(auto term = parse_term() ){
+                    auto term_exclaim = m_allocator.alloc<node::TermExclaim>();
+                    term_exclaim->term = term.value();
+                    auto new_term = m_allocator.alloc<node::Term>();
+                    new_term->var = term_exclaim;
+                    return new_term;
+                }
+            }else if(peek().has_value() && peek().value().type == TokenType::sub){
+                consume(); // consume -
+                if(auto term = parse_term() ){
+                    auto term_exclaim = m_allocator.alloc<node::TermNegate>();
+                    term_exclaim->term = term.value();
+                    auto new_term = m_allocator.alloc<node::Term>();
+                    new_term->var = term_exclaim;
+                    return new_term;
+                }
+            }
+            
+            else{
                 return {};  
             }
         }

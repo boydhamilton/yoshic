@@ -41,6 +41,20 @@ class Generator {
                 void operator()(const node::TermParen* paren) const {
                     gen->generate_expr(paren->expr);
                 }
+                void operator()(const node::TermExclaim* term_exclaim) const {
+                    gen->generate_term(term_exclaim->term);
+                    gen->pop("rax");
+                    gen->m_output << "\tcmp rax, 0\n"; // compare term to 0
+                    gen->m_output << "\tsete al\n"; // set al to 1 if rax is 0 (term is false), else set to 0 (term is true)
+                    gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax, so rax is now 1 if term was false, 0 if term was true
+                    gen->push("rax");
+                }
+                void operator()(const node::TermNegate* term_negate) const {
+                    gen->generate_term(term_negate->term);
+                    gen->pop("rax");
+                    gen->m_output << "\tneg rax\n";
+                    gen->push("rax");
+                }
             };
             term_visitor visitor({.gen = this});
             std::visit(visitor, term->var);
