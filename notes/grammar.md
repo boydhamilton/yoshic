@@ -32,6 +32,7 @@ $$
         \text{[expr] } / \text{ [expr]} & \text{precedence} = 1\\
         \text{[expr]} + \text{[expr]} & \text{precedence} = 0\\
         \text{[expr]} - \text{[expr]} & \text{precedence} = 0\\
+        \text{[conditional]} & \text{precedence} = -1
     \end{cases}
     \\
 
@@ -52,6 +53,9 @@ $$
     \text{[conditional]} &\to \begin{cases}
         \text{[expr] } == \text{ [expr]} \\
         \text{[expr] } != \text{ [expr]} \\
+        \text{[expr] } < \text{ [expr]} \\
+        \text{[expr] } > \text{ [expr]} \\
+
     \end{cases}
     \\
 

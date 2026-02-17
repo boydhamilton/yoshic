@@ -118,6 +118,24 @@ class Generator {
                         gen->m_output << "\tsetl al\n"; // set al to 1 if rax < rbx, else set to 0
                         gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax
                         gen->push("rax");
+                    }else if(auto eq = std::get_if<node::BinExprEq*>(&bin_expr->var)){
+                        gen->generate_expr((*eq)->lhs);
+                        gen->generate_expr((*eq)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\tcmp rax, rbx\n";
+                        gen->m_output << "\tsete al\n"; // set al to 1 if rax == rbx, else set to 0
+                        gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax
+                        gen->push("rax");
+                    }else if(auto neq = std::get_if<node::BinExprNeq*>(&bin_expr->var)){
+                        gen->generate_expr((*neq)->lhs);
+                        gen->generate_expr((*neq)->rhs);
+                        gen->pop("rbx"); // rhs
+                        gen->pop("rax"); // lhs
+                        gen->m_output << "\tcmp rax, rbx\n";
+                        gen->m_output << "\tsetne al\n"; // set al to 1 if rax != rbx, else set to 0
+                        gen->m_output << "\tmovzx rax, al\n"; // zero extend al into rax
+                        gen->push("rax");
                     }
                     else{
                         std::cerr << "Invalid binary expression" << std::endl;

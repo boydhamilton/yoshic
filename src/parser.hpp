@@ -75,9 +75,20 @@ namespace node {
         node::Expr* rhs;
     };
 
+    struct BinExprEq{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
+
+    struct BinExprNeq{
+        node::Expr* lhs;
+        node::Expr* rhs;
+    };
+
     struct BinExpr{
         std::variant<node::BinExprAdd*, node::BinExprMulti*, node::BinExprSub*, node::BinExprDiv*,
-        node::BinExprGt*, node::BinExprLt*> var;
+        node::BinExprGt*, node::BinExprLt*,
+        node::BinExprEq*, node::BinExprNeq*> var;
         //node::BinExprAdd* var;
     };
 
@@ -137,8 +148,6 @@ class Parser {
         {
 
         }
-
-        
 
         std::optional<node::Term*> parse_term(){
              if(peek().has_value() && peek().value().type == TokenType::int_lit){
@@ -263,6 +272,16 @@ class Parser {
                     lt->lhs = expr_lhs;
                     lt->rhs = expr_rhs.value();
                     expr->var = lt;
+                }else if(op.type == TokenType::equal_cmp){
+                    auto eq = m_allocator.alloc<node::BinExprEq>();
+                    eq->lhs = expr_lhs;
+                    eq->rhs = expr_rhs.value();
+                    expr->var = eq;
+                }else if(op.type == TokenType::nequal_cmp){
+                    auto neq = m_allocator.alloc<node::BinExprNeq>();
+                    neq->lhs = expr_lhs;
+                    neq->rhs = expr_rhs.value();
+                    expr->var = neq;
                 }
                 
                 else{
@@ -326,7 +345,7 @@ class Parser {
 
             }else if(peek().has_value() && peek().value().type == TokenType::let 
             && peek(1).has_value() && peek(1).value().type == TokenType::ident
-            && peek(2).has_value() && peek(2).value().type == TokenType::equal_sign){
+            && peek(2).has_value() && peek(2).value().type == TokenType::equal_assign){
 
                 // for var decl we check first three tokens lol really fat if statement
                 consume(); // consuming let
@@ -349,7 +368,7 @@ class Parser {
                 stmt->var = stmt_let;
                 return stmt;
             }else if(peek().has_value() && peek().value().type == TokenType::ident
-            && peek(1).has_value() && peek(1).value().type == TokenType::equal_sign){
+            && peek(1).has_value() && peek(1).value().type == TokenType::equal_assign){
 
                 auto stmt_let = m_allocator.alloc<node::StmtAssign>();
                 stmt_let->ident = consume(); // consume ident
@@ -440,8 +459,6 @@ class Parser {
                 if(peek().has_value() && peek().value().type == TokenType::close_paren){
                     consume();
                 }else{
-                    if(peek().has_value())
-                        std::cerr <<"got "<< (int)peek().value().type << std::endl;
                     std::cerr << "Expected ')' after condition in while statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }

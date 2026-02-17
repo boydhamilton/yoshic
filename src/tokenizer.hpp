@@ -16,7 +16,7 @@ enum class TokenType {
     close_paren,
     ident,
     let,
-    equal_sign,
+    equal_assign,  // =
     plus,
     multi,
     sub,
@@ -27,7 +27,9 @@ enum class TokenType {
     while_kw,
     exclaim,
     greaterthan,
-    lessthan
+    lessthan,
+    equal_cmp, // == 
+    nequal_cmp // != 
 };
 
 typedef struct {
@@ -49,6 +51,8 @@ std::optional<int> bin_prec(TokenType type){
     switch(type){
         case TokenType::greaterthan:
         case TokenType::lessthan:
+        case TokenType::equal_cmp:
+        case TokenType::nequal_cmp:
             return -1;
         case TokenType::sub:
         case TokenType::plus:
@@ -132,8 +136,14 @@ class Tokenizer {
                         continue;
                     }else if(peek().value() == '='){
                         consume();
-                        tokens.push_back( {.type = TokenType::equal_sign});
-                        continue;
+                        if(peek().has_value() && peek().value() == '='){
+                            consume();
+                            tokens.push_back( {.type = TokenType::equal_cmp});
+                            continue;
+                        }else{
+                            tokens.push_back( {.type = TokenType::equal_assign});
+                            continue;
+                        }
                     
                     }else if(peek().value() == '+'){
                         consume();
@@ -161,8 +171,14 @@ class Tokenizer {
                         continue;
                     }else if(peek().value() == '!'){
                         consume();
-                        tokens.push_back({.type = TokenType::exclaim});
-                        continue;
+                        if(peek().has_value() && peek().value() == '='){
+                            consume();
+                            tokens.push_back({.type = TokenType::nequal_cmp});
+                            continue;
+                        }else{
+                            tokens.push_back({.type = TokenType::exclaim});
+                            continue;
+                        }
                     }else if(peek().value() == '>'){
                         consume();
                         tokens.push_back({.type = TokenType::greaterthan});
