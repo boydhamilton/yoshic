@@ -9,12 +9,15 @@ _start:
 	mov rax, 0
 	push rax
 	mov QWORD [rbp - 16], rax
-	mov rax, 49
+	mov rax, 75
 	push rax
 	mov QWORD [rbp - 24], rax
 	mov rax, 0
 	push rax
 	mov QWORD [rbp - 32], rax
+	mov rax, 0
+	push rax
+	mov QWORD [rbp - 40], rax
 while_loop_start_l0:
 	push QWORD [rbp - 16]
 	push QWORD [rbp - 8]
@@ -27,6 +30,15 @@ while_loop_start_l0:
 	pop rax
 	cmp rax, 0
 	je while_loop_end_l0
+	push QWORD [rbp - 32]
+	mov rax, 1
+	push rax
+	pop rax
+	pop rbx
+	add rax, rbx
+	push rax
+	pop rax
+	mov QWORD [rbp - 32], rax
 	push QWORD [rbp - 16]
 	push QWORD [rbp - 8]
 	push QWORD [rbp - 16]
@@ -46,8 +58,8 @@ while_loop_start_l0:
 	add rax, rbx
 	push rax
 	pop rax
-	mov QWORD [rbp - 32], rax
-	push QWORD [rbp - 32]
+	mov QWORD [rbp - 40], rax
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -68,7 +80,7 @@ while_loop_start_l0:
 	jmp end_if_l1
 else_l1:
 end_if_l1:
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -79,7 +91,7 @@ end_if_l1:
 	pop rax
 	cmp rax, 0
 	je else_l2
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	mov rax, 1
 	push rax
 	pop rax
@@ -91,7 +103,7 @@ end_if_l1:
 	jmp end_if_l2
 else_l2:
 end_if_l2:
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -102,7 +114,7 @@ end_if_l2:
 	pop rax
 	cmp rax, 0
 	je else_l3
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	mov rax, 1
 	push rax
 	pop rbx
@@ -130,6 +142,15 @@ while_loop_end_l0:
 	pop rax
 	cmp rax, 0
 	je else_l4
+	push QWORD [rbp - 32]
+	mov rax, 1
+	push rax
+	pop rax
+	pop rbx
+	add rax, rbx
+	push rax
+	pop rax
+	mov QWORD [rbp - 32], rax
 	push QWORD [rbp - 16]
 	push QWORD [rbp - 8]
 	push QWORD [rbp - 16]
@@ -149,8 +170,8 @@ while_loop_end_l0:
 	add rax, rbx
 	push rax
 	pop rax
-	mov QWORD [rbp - 32], rax
-	push QWORD [rbp - 32]
+	mov QWORD [rbp - 40], rax
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -171,7 +192,7 @@ while_loop_end_l0:
 	jmp end_if_l5
 else_l5:
 end_if_l5:
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -182,7 +203,7 @@ end_if_l5:
 	pop rax
 	cmp rax, 0
 	je else_l6
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	mov rax, 1
 	push rax
 	pop rax
@@ -194,7 +215,7 @@ end_if_l5:
 	jmp end_if_l6
 else_l6:
 end_if_l6:
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	push QWORD [rbp - 24]
 	pop rbx
 	pop rax
@@ -205,7 +226,7 @@ end_if_l6:
 	pop rax
 	cmp rax, 0
 	je else_l7
-	push QWORD [rbp - 32]
+	push QWORD [rbp - 40]
 	mov rax, 1
 	push rax
 	pop rbx
