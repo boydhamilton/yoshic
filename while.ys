@@ -1,16 +1,19 @@
 
 let right = 100;
 let left = 0;
-let x = 49;
+let x = 75;
+
+let iters = 0;
 
 let mid = 0;
 
 while (left < right) {
+    iters = iters + 1;
 
     mid = left + (right - left) / 2;
 
     if ( !(mid - x) ) {
-        exit mid;
+        exit iters;
     }
 
     if (mid < x) {
@@ -22,10 +25,11 @@ while (left < right) {
 }
 
 if( !(left - right) ){
+    iters = iters + 1;
 	mid = left + (right - left) / 2;
 
     if ( !(mid - x) ) {
-        exit mid;
+        exit iters;
     }
 
     if (mid < x) {
@@ -34,6 +38,7 @@ if( !(left - right) ){
 	if (mid > x){
         right = mid - 1;
     }
+    
 }
 
 exit -1;
