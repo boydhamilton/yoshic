@@ -112,8 +112,14 @@ namespace node {
         node::Expr* expr;  
     };
 
+
     struct Scope{
         std::vector<node::Stmt*> statements;
+    };
+
+    struct StmtWhile{
+        node::Expr* condition;
+        node::Scope* body;
     };
 
     struct StmtIf{
@@ -121,15 +127,23 @@ namespace node {
         node::Scope* body;
     };    
 
-    struct StmtWhile{
-        node::Expr* condition;
+    struct StmtFuncCall{
+        Token ident;
+        std::vector<node::Expr*> args;
+    };
+
+    struct StmtFunct{
+        Token ident;
+        std::vector<node::Expr*> args;
         node::Scope* body;
     };
+
+
     
     struct Stmt {
         std::variant<node::StmtExit*, node::StmtLet*, 
         node::StmtAssign*, node::Scope*, node::StmtIf*,
-        node::StmtWhile*> var;
+        node::StmtWhile*, node::StmtFuncCall*, node::StmtFunct*> var;
     };
 
     
@@ -323,6 +337,13 @@ class Parser {
         }
 
         std::optional<node::Stmt*> parse_stmt(){
+            // int i=0;
+            // while(peek(i).has_value() && peek(i).value().type != TokenType::semi){
+            //     std::cout << (int)peek(i).value().type << " ";
+            //     i++;
+            // }
+            // std::cout << std::endl;
+
             if(peek().has_value() && peek().value().type == TokenType::exit
             && peek(1).has_value() ){
 
@@ -472,7 +493,86 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_while;
                 return stmt;
-            }else{
+            }else if(peek().has_value() && peek().value().type == TokenType::ident
+            && peek(1).has_value() && peek(1).value().type == TokenType::open_paren){
+                
+                auto stmt_call = m_allocator.alloc<node::StmtFuncCall>();
+                stmt_call->ident = consume(); // consume ident
+                consume(); // consume open paren
+
+                while (true) {
+                    if (peek().has_value() && peek().value().type == TokenType::close_paren) {
+                        break;
+                    }
+                    auto arg = parse_expr();
+                    if (!arg.has_value()) {
+                        std::cerr << "Expected expression in function call arguments" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    if (stmt_call->args.size() == 6) {
+                        std::cerr << "Too many arguments in function call (max 6)" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    stmt_call->args.push_back(arg.value());
+                    if (peek().has_value() && peek().value().type == TokenType::comma) {
+                        consume();
+                    } else if (peek().has_value() && peek().value().type == TokenType::close_paren) {
+                        break;
+                    } else {
+                        std::cerr << "Expected ',' or ')' in function call" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume();
+                }else{
+                    std::cerr << "Expected ')' after function call arguments" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(peek().has_value() && peek().value().type == TokenType::semi){
+                    consume();
+                }else{
+                    std::cerr << "Expected ';' after function call" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_call;
+                return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::funct
+            && peek(1).has_value() && peek(1).value().type == TokenType::ident
+            && peek(2).has_value() && peek(2).value().type == TokenType::open_paren){
+                
+                auto stmt_funct = m_allocator.alloc<node::StmtFunct>();
+                consume(); // consume funct
+                stmt_funct->ident = consume(); // consume ident
+                consume(); // consume open paren
+
+                while(auto arg = parse_expr() ){
+                    if(stmt_funct->args.size() == 6){
+                        std::cerr << "Too many arguments in function definition (max 6)" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    stmt_funct->args.push_back(arg.value());
+                    if(peek().has_value() && peek().value().type == TokenType::comma)
+                        consume();
+                }
+                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                    consume();
+                }else{
+                    std::cerr << "Expected ')' after function arguments" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(auto scope = parse_scope()){
+                    stmt_funct->body = scope.value();
+                }else{
+                    std::cerr << "Invalid scope in function definition" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_funct;
+                return stmt;
+            }
+            else{
                 return {};
             }
             

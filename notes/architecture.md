@@ -9,3 +9,17 @@
 
 ## scope
 - vector of variables, so can linear search & get location to do math to find position in stack & frame it up ig ?!?
+
+## stdlib
+- first we need to add functions lol
+- also strings
+- arrays (?) 
+
+then:
+1) link against libc 
+2) yoshi std functions compile to asm calls to libc functions (write stdlib.ys then have a static stdlib.s -> stdlib.o)
+3) ensure the .s has extern decl for functions, as they will be defined in the compilation of stdlib.ys
+
+rn, this layer should handle
+- os i/o (console & files)
+- heap memory

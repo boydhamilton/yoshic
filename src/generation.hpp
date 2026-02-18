@@ -224,24 +224,68 @@ class Generator {
                 }
 
                 void operator()(const node::StmtWhile* stmt_while){
-                    std::string loop_start_label = "while_loop_start_l" + std::to_string(gen->m_labelcount);
-                    std::string loop_end_label = "while_loop_end_l" + std::to_string(gen->m_labelcount);
+                    std::string while_label = "while_l" + std::to_string(gen->m_labelcount);
+                    std::string end_label = "end_while_l" + std::to_string(gen->m_labelcount);
                     gen->m_labelcount++;
-
-                    gen->m_output << loop_start_label << ":\n";
+                    gen->m_output << while_label << ":\n";
                     gen->generate_expr(stmt_while->condition); // condition on top of stack
 
                     gen->pop("rax"); // pop condition into rax
                     gen->m_output << "\tcmp rax, 0\n"; // compare condition to 0
-                    gen->m_output << "\tje " << loop_end_label << "\n"; // jump to end of loop if condition is false (0)
+                    gen->m_output << "\tje " << end_label << "\n"; // jump to end of while if condition is false (0)
                     
-                    // loop body
+                    // while body
                     for(const node::Stmt* stmt : stmt_while->body->statements){
                         gen->generate_stmt(stmt);
                     }
-                    gen->m_output << "\tjmp " << loop_start_label << "\n"; // jump back to start of loop to check condition again
-                    
-                    gen->m_output << loop_end_label << ":\n";
+                    gen->m_output << "\tjmp " << while_label << "\n"; // jump back to start of while to re-evaluate condition
+
+                    gen->m_output << end_label << ":\n";
+                }
+
+                void operator()(const node::StmtFuncCall* stmt_call){
+                    std::vector<std::string> arg_registers = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+                    // Evaluate arguments in reverse order to push onto stack correctly
+                    for (int i = stmt_call->args.size() - 1; i >= 0; --i) {
+                        gen->generate_expr(stmt_call->args[i]);
+                    }
+                    // Pop arguments into registers
+                    for (size_t i = 0; i < stmt_call->args.size(); ++i) {
+                        gen->pop(arg_registers[i]);
+                    }
+                    gen->m_output << "\tcall " << "funct_" << stmt_call->ident.val.value() << "\n";
+                    // Yoshi functions are void, no return value
+                }
+
+                void operator()(const node::StmtFunct* stmt_funct){
+                    std::string funct_label = "funct_" + stmt_funct->ident.val.value();
+                    gen->m_output << "\tjmp " << funct_label << "_end\n"; // jump over function body on initial pass
+                    gen->m_output << funct_label << ":\n";
+                    gen->begin_scope();
+                    // for now, we will just support up to 6 arguments, as that is how many can be passed in registers in x86-64 calling convention
+                    std::vector<std::string> arg_registers = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+                    for(size_t i=0; i<stmt_funct->args.size(); i++){
+                        const auto& arg = stmt_funct->args[i];
+                        std::string arg_name = "";
+                        // Extract name if arg is a Term containing a TermIdent
+                        if (auto term_ptr = std::get_if<node::Term*>(&arg->var)) {
+                            if (auto ident_ptr = std::get_if<node::TermIdent*>(&(*term_ptr)->var)) {
+                                arg_name = (*ident_ptr)->ident.val.value();
+                            }
+                        }
+                        if (arg_name.empty()) {
+                            arg_name = stmt_funct->ident.val.value() + "_arg" + std::to_string(i);  // Fallback
+                        }
+                        gen->m_vars.push_back(var{arg_name, gen->m_stack_size});
+                        gen->m_output << "\tmov " << "QWORD [rbp - " << (gen->m_stack_size + 1)*8 << "], " << arg_registers[i] << "\n"; // move argument from register to stack
+                        gen->m_stack_size++;            
+                    }
+                    for(const node::Stmt* stmt : stmt_funct->body->statements){
+                        gen->generate_stmt(stmt);
+                    }
+                    gen->end_scope();
+                    gen->m_output << "\tjmp " << funct_label << "_end\n"; //
+                    gen->m_output << funct_label << "_end:\n";
                 }
             };
             stmt_visitor visitor{.gen = this};

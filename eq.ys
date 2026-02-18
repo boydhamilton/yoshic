@@ -1,8 +1,10 @@
 
-
 let x = 10;
-let y = 1;
 
-let z = (x != y) * 3 - 1;
+funct rewritex(a){
+    x = a;
+}
 
-exit z;
+rewritex(3);
+
+exit x;

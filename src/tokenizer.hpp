@@ -29,7 +29,10 @@ enum class TokenType {
     greaterthan,
     lessthan,
     equal_cmp, // == 
-    nequal_cmp // != 
+    nequal_cmp, // != 
+    comma,
+    funct,
+    ret 
 };
 
 typedef struct {
@@ -99,6 +102,14 @@ class Tokenizer {
                             continue;
                         }else if(buf == "while"){
                             tokens.push_back({.type = TokenType::while_kw});
+                            buf.clear();
+                            continue;
+                        }else if(buf == "funct"){
+                            tokens.push_back({.type = TokenType::funct});
+                            buf.clear();
+                            continue;
+                        }else if(buf == "ret"){
+                            tokens.push_back({.type = TokenType::ret});
                             buf.clear();
                             continue;
                         }
@@ -187,7 +198,12 @@ class Tokenizer {
                         consume();
                         tokens.push_back({.type = TokenType::lessthan});
                         continue;
+                    }else if(peek().value() == ','){
+                        consume();
+                        tokens.push_back({.type = TokenType::comma});
+                        continue;
                     }
+
                     else if(isspace(peek().value())){
                         consume();
                         continue;

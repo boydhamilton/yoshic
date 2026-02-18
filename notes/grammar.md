@@ -12,7 +12,9 @@ $$
         \text{ident} = \text{[expr]}; \\
         \{ \text{[stmt]}^+ \} \\
         if(\text{[expr]}) \text{[scope]} \\
-        while(\text{[expr]}) \text{[scope]}
+        while(\text{[expr]}) \text{[scope]} \\
+        \text{ident}(\text{[expr\_0]} , ... , \text{[expr\_n]}); \\
+        funct \text{ ident}( \text{[expr\_0]} , ... , \text{[expr\_n]})
     \end{cases}
     \\
 
