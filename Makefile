@@ -3,7 +3,7 @@
 
 CC = g++
 
-TARGET = brhcc
+TARGET = yoshic
 
 SRCS = src/main.cpp
 

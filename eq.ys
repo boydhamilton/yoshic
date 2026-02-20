@@ -1,8 +1,6 @@
-
-
-let x = 10;
-let y = 1;
-
-let z = (x != y) * 3 - 1;
-
-exit z;
+let a = 10;
+let b = 9;
+if(a != b){
+    exit 0;
+}
+exit a - b;

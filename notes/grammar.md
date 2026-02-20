@@ -10,7 +10,7 @@ $$
         exit \text{ [expr]}; \\
         let \text{ ident} = \text{[expr]}; \\
         \text{ident} = \text{[expr]}; \\
-        \{ \text{[stmt]}^+ \} \\
+        \text{[scope]} \\
         if(\text{[expr]}) \text{[scope]} \\
         while(\text{[expr]}) \text{[scope]}
     \end{cases}
