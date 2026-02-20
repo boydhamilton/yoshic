@@ -2,7 +2,7 @@
 
 # yoshi 
 
-toy compiler for the yoshi programming language, something i came up with (largely) in libraries during reading week instead of studying. read `notes/grammar.md` for information on how to write it!
+toy compiler for the yoshi programming language, something i came up with (largely) in libraries during reading week. read `notes/grammar.md` for information on how to write it!
 
 
 ## getting started
