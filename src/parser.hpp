@@ -112,6 +112,10 @@ namespace node {
         node::Expr* expr;  
     };
 
+    struct StmtRet{
+        node::Expr* expr;
+    };
+
 
     struct Scope{
         std::vector<node::Stmt*> statements;
@@ -143,7 +147,8 @@ namespace node {
     struct Stmt {
         std::variant<node::StmtExit*, node::StmtLet*, 
         node::StmtAssign*, node::Scope*, node::StmtIf*,
-        node::StmtWhile*, node::StmtFuncCall*, node::StmtFunct*> var;
+        node::StmtWhile*, node::StmtFuncCall*, node::StmtFunct*,
+        node::StmtRet*> var;
     };
 
     
@@ -344,7 +349,7 @@ class Parser {
             // }
             // std::cout << std::endl;
 
-            if(peek().has_value() && peek().value().type == TokenType::exit
+            if(peek().has_value() && peek().value().type == TokenType::exit_kw
             && peek(1).has_value() ){
 
                 consume();
@@ -364,7 +369,7 @@ class Parser {
                 
                 return stmt;
 
-            }else if(peek().has_value() && peek().value().type == TokenType::let 
+            }else if(peek().has_value() && peek().value().type == TokenType::let_kw 
             && peek(1).has_value() && peek(1).value().type == TokenType::ident
             && peek(2).has_value() && peek(2).value().type == TokenType::equal_assign){
 
@@ -538,7 +543,7 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_call;
                 return stmt;
-            }else if(peek().has_value() && peek().value().type == TokenType::funct
+            }else if(peek().has_value() && peek().value().type == TokenType::funct_kw
             && peek(1).has_value() && peek(1).value().type == TokenType::ident
             && peek(2).has_value() && peek(2).value().type == TokenType::open_paren){
                 
@@ -570,6 +575,24 @@ class Parser {
                 }
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_funct;
+                return stmt;
+            }else if(peek().has_value() && peek().value().type == TokenType::ret_kw){
+                consume(); // consume ret
+                auto stmt_ret = m_allocator.alloc<node::StmtRet>();
+                if(auto expr = parse_expr() ){
+                    stmt_ret->expr = expr.value();
+                }else{
+                    std::cerr << "Invalid expression in return statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(peek().has_value() && peek().value().type == TokenType::semi){
+                    consume();
+                }else{
+                    std::cerr << "Expected ';' after return statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<node::Stmt>();
+                stmt->var = stmt_ret;
                 return stmt;
             }
             else{

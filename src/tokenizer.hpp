@@ -9,13 +9,13 @@
 
 // definitions 
 enum class TokenType {
-	exit,
+	exit_kw,
 	int_lit,
 	semi,
     open_paren,
     close_paren,
     ident,
-    let,
+    let_kw,
     equal_assign,  // =
     plus,
     multi,
@@ -31,8 +31,8 @@ enum class TokenType {
     equal_cmp, // == 
     nequal_cmp, // != 
     comma,
-    funct,
-    ret 
+    funct_kw,
+    ret_kw 
 };
 
 typedef struct {
@@ -89,11 +89,11 @@ class Tokenizer {
                             buf.push_back(consume());
                         }
                         if(buf == "exit"){
-                            tokens.push_back({.type = TokenType::exit});
+                            tokens.push_back({.type = TokenType::exit_kw});
                             buf.clear();
                             continue;
                         }else if(buf == "let"){
-                            tokens.push_back({.type = TokenType::let});
+                            tokens.push_back({.type = TokenType::let_kw});
                             buf.clear();
                             continue;
                         }else if(buf == "if"){
@@ -105,11 +105,11 @@ class Tokenizer {
                             buf.clear();
                             continue;
                         }else if(buf == "funct"){
-                            tokens.push_back({.type = TokenType::funct});
+                            tokens.push_back({.type = TokenType::funct_kw});
                             buf.clear();
                             continue;
                         }else if(buf == "ret"){
-                            tokens.push_back({.type = TokenType::ret});
+                            tokens.push_back({.type = TokenType::ret_kw});
                             buf.clear();
                             continue;
                         }

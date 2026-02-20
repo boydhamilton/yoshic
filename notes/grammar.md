@@ -13,8 +13,10 @@ $$
         \{ \text{[stmt]}^+ \} \\
         if(\text{[expr]}) \text{[scope]} \\
         while(\text{[expr]}) \text{[scope]} \\
+        funct \text{ ident}( \text{[expr\_0]} , ... , \text{[expr\_n]}) \\
         \text{ident}(\text{[expr\_0]} , ... , \text{[expr\_n]}); \\
-        funct \text{ ident}( \text{[expr\_0]} , ... , \text{[expr\_n]})
+        ret \text{ [expr]};
+        
     \end{cases}
     \\
 

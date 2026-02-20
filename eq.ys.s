@@ -3,24 +3,21 @@ _start:
 	push rbp
 	mov rbp, rsp
 
-	mov rax, 10
-	push rax
-	mov QWORD [rbp - 8], rax
-	jmp funct_rewritex_end
-funct_rewritex:
-	mov QWORD [rbp - 16], rdi
-	push QWORD [rbp - 16]
+	jmp funct_dime_end
+funct_dime:
+	mov rsp, rbp
+	pop rbp
 	pop rax
-	mov QWORD [rbp - 8], rax
-	add rsp, 8
-	jmp funct_rewritex_end
-funct_rewritex_end:
-	mov rax, 3
+	ret
+	add rsp, 0
+	mov rsp, rbp
+	pop rbp
+	ret
+funct_dime_end:
+	call funct_dime
 	push rax
-	pop rdi
-	call funct_rewritex
+	mov rax, 0
 	push rax
-	push QWORD [rbp - 8]
 	mov rax, 60
 	pop rdi
 	syscall

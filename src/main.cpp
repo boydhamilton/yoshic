@@ -27,7 +27,7 @@ int main(int argc, char* argv[]){
 	string contents;
 	{ // reading input scope
 
-		fstream in(argv[1], ios::in); // open input .c file
+		fstream in(argv[1], ios::in); // open input
 		stringstream content_stream;
 
 		content_stream << in.rdbuf();

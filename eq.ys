@@ -1,10 +1,9 @@
 
-let x = 10;
 
-funct rewritex(a){
-    x = a;
+funct dime(){
+    ret 10;
 }
 
-rewritex(3);
+dime();
 
-exit x;
+exit 0;

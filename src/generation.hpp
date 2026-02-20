@@ -245,20 +245,21 @@ class Generator {
 
                 void operator()(const node::StmtFuncCall* stmt_call){
                     std::vector<std::string> arg_registers = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
-                    // Evaluate arguments in reverse order to push onto stack correctly
+                    // args in reverse order for stack pushing
                     for (int i = stmt_call->args.size() - 1; i >= 0; --i) {
                         gen->generate_expr(stmt_call->args[i]);
                     }
-                    // Pop arguments into registers
                     for (size_t i = 0; i < stmt_call->args.size(); ++i) {
                         gen->pop(arg_registers[i]);
                     }
                     gen->m_output << "\tcall " << "funct_" << stmt_call->ident.val.value() << "\n";
-                    // Yoshi functions are void, no return value
+                    gen->push("rax");
                 }
 
                 void operator()(const node::StmtFunct* stmt_funct){
-                    std::string funct_label = "funct_" + stmt_funct->ident.val.value();
+                    
+                    std::string func_name = stmt_funct->ident.val ? stmt_funct->ident.val.value() : "unknown";
+                    std::string funct_label = "funct_" + func_name;
                     gen->m_output << "\tjmp " << funct_label << "_end\n"; // jump over function body on initial pass
                     gen->m_output << funct_label << ":\n";
                     gen->begin_scope();
@@ -274,7 +275,7 @@ class Generator {
                             }
                         }
                         if (arg_name.empty()) {
-                            arg_name = stmt_funct->ident.val.value() + "_arg" + std::to_string(i);  // Fallback
+                            arg_name = func_name + "_arg" + std::to_string(i);  // Fallback
                         }
                         gen->m_vars.push_back(var{arg_name, gen->m_stack_size});
                         gen->m_output << "\tmov " << "QWORD [rbp - " << (gen->m_stack_size + 1)*8 << "], " << arg_registers[i] << "\n"; // move argument from register to stack
@@ -284,8 +285,17 @@ class Generator {
                         gen->generate_stmt(stmt);
                     }
                     gen->end_scope();
-                    gen->m_output << "\tjmp " << funct_label << "_end\n"; //
+                    gen->m_output << "\tmov rsp, rbp\n";
+                    gen->m_output << "\tpop rbp\n";
+                    gen->m_output << "\tret\n";
                     gen->m_output << funct_label << "_end:\n";
+                }
+
+                void operator()(const node::StmtRet* stmt_ret){
+                    gen->m_output << "\tmov rsp, rbp\n";
+                    gen->m_output << "\tpop rbp\n";
+                    gen->pop("rax");
+                    gen->m_output << "\tret\n";
                 }
             };
             stmt_visitor visitor{.gen = this};
