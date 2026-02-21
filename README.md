@@ -4,6 +4,8 @@
 
 toy compiler for the yoshi programming language, something i came up with (largely) in libraries during reading week. read `notes/grammar.md` for information on how to write it!
 
+targets x86 architecture, recommended to run in wsl enviroment.
+
 
 ## getting started
 1) run makefile to generate `yoshic` executable 
