@@ -31,12 +31,13 @@ class ArenaAllocator {
             }
 
             m_offset = static_cast<std::byte*>(ptr) + sizeof(T);
-            return static_cast<T*>(ptr);
+            return new (ptr) T();
+        }
+        
+        inline void reset(){
+            m_offset = m_buffer;
         }
 
-        /*
-        copy constructor takes arena allocator and produces a copy
-        */
        inline ArenaAllocator(const ArenaAllocator& other) = delete;
 
        inline ~ArenaAllocator(){

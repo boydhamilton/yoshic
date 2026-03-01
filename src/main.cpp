@@ -38,7 +38,8 @@ int main(int argc, char* argv[]){
 	Tokenizer tokenizer(move(contents));
 	vector<Token> tokens = tokenizer.tokenize();
 
-	Parser parser(std::move(tokens));
+	ArenaAllocator arena(4 * 1024 * 1024);
+	Parser parser(std::move(tokens), arena);
 	optional<node::Program> ast = parser.parse_program();
 
 	if(!ast.has_value()){

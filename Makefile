@@ -9,7 +9,7 @@ SRCS = src/main.cpp
 
 OBJS = $(SRCS:.c=.o)
 
-CFLAGS = -std=c++20 -O2 -Wall
+CFLAGS = -std=c++20 -O3 -Wall
 
 all: $(TARGET)
 
