@@ -19,15 +19,15 @@ class Generator {
             struct term_visitor{
                 Generator* gen; 
                 void operator()(const node::TermIntLit* int_lit) const{
-                    gen->m_output << "\tmov rax, " << int_lit->int_lit.val.value() << "\n";
+                    gen->m_output << "\tmov rax, " << int_lit->int_lit.val << "\n";
                     gen->push("rax"); // push int lit onto the stack
                 }
                 void operator()(const node::TermIdent* ident) const {
 
                     auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
-                        [ident](const var& v) { return v.name == ident->ident.val.value(); });
+                        [ident](const var& v) { return v.name == ident->ident.val; });
                     if(it == gen->m_vars.end()){
-                        std::cerr << "Identifier " << ident->ident.val.value() << " undeclared" << std::endl;
+                        std::cerr << "Identifier " << ident->ident.val << " undeclared" << std::endl;
                         exit(EXIT_FAILURE);
                     }
                     
@@ -167,21 +167,21 @@ class Generator {
                 void operator()(const node::StmtLet* let){
                     auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
                         [let](const var& v) { 
-                            return v.name == let->ident.val.value(); 
+                            return v.name == let->ident.val; 
                         });
                     if(it != gen->m_vars.end()){
-                        std::cerr << "Identifier " << let->ident.val.value() << " previously defined" << std::endl;
+                        std::cerr << "Identifier " << let->ident.val << " previously defined" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    gen->m_vars.push_back( var{let->ident.val.value(), gen->m_stack_size});
+                    gen->m_vars.push_back( var{std::string(let->ident.val), gen->m_stack_size});
                     gen->generate_expr(let->expr); // now evaluated value of expression is on the top of the stack, generate_expr puts on stack for us
                     gen->m_output << "\tmov " << "QWORD [rbp - " << (gen->m_stack_size)*8 << "], rax\n";
                 }
                 void operator()(const node::StmtAssign* assign){
                     auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), 
-                        [assign](const var& v) { return v.name == assign->ident.val.value(); });
+                        [assign](const var& v) { return v.name == assign->ident.val; });
                     if(it == gen->m_vars.end()){
-                        std::cerr << "Identifier " << assign->ident.val.value() << " not previously defined" << std::endl;
+                        std::cerr << "Identifier " << assign->ident.val << " not previously defined" << std::endl;
                         exit(EXIT_FAILURE);
                     }
                     gen->generate_expr(assign->expr); // top of stack 

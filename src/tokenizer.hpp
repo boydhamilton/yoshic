@@ -2,12 +2,13 @@
 
 // std lib
 #include<string>
+#include<string_view>
 #include<vector>
 #include<optional>
 #include<iostream>
 
 
-// definitions 
+// definitions
 enum class TokenType {
 	exit,
 	int_lit,
@@ -28,13 +29,18 @@ enum class TokenType {
     exclaim,
     greaterthan,
     lessthan,
-    equal_cmp, // == 
-    nequal_cmp // != 
+    equal_cmp, // ==
+    nequal_cmp // !=
 };
 
 typedef struct {
 	TokenType type;
-	std::optional<std::string> val;
+	// view into the *original source buffer* the Tokenizer was built with -
+	// only valid as long as that buffer is alive. Only ident/int_lit ever
+	// set this; every other token type leaves it default-constructed
+	// (empty), which doubles as the "no value" case since the tokenizer
+	// never produces an ident/int_lit with zero-length text.
+	std::string_view val;
 } Token;
 
 bool is_bin_op(TokenType type){
@@ -68,58 +74,52 @@ std::optional<int> bin_prec(TokenType type){
 class Tokenizer {
 
     public:
+        // takes the source by reference rather than owning a copy: token
+        // values are string_views into this buffer, so the caller must
+        // keep it alive at least as long as the resulting tokens (and, in
+        // turn, the AST/asm built from them) are used - the rest of the
+        // pipeline already holds the source string open that long (see
+        // main.cpp's `contents`, game.hpp's `input`/`kWhileProgram`).
         inline explicit Tokenizer(const std::string& src)
-           : m_src(std::move(src))
+           : m_src(src)
            {
-                // constructor body empty as all our work (init members list) is done in decl
            }
 
            inline std::vector<Token> tokenize() {
 
                 std::vector<Token> tokens;
-                std::string buf;
 
                 while(peek().has_value()){
                     if(std::isalpha(peek().value())){
-                        buf.push_back(consume());
+                        std::size_t start = m_index;
+                        consume();
                         while(peek().has_value() && std::isalnum(peek().value())){
-                            buf.push_back(consume());
+                            consume();
                         }
-                        if(buf == "exit"){
+                        std::string_view word(m_src.data() + start, m_index - start);
+
+                        if(word == "exit"){
                             tokens.push_back({.type = TokenType::exit});
-                            buf.clear();
-                            continue;
-                        }else if(buf == "let"){
+                        }else if(word == "let"){
                             tokens.push_back({.type = TokenType::let});
-                            buf.clear();
-                            continue;
-                        }else if(buf == "if"){
+                        }else if(word == "if"){
                             tokens.push_back({.type = TokenType::if_kw});
-                            buf.clear();
-                            continue;
-                        }else if(buf == "while"){
+                        }else if(word == "while"){
                             tokens.push_back({.type = TokenType::while_kw});
-                            buf.clear();
-                            continue;
                         }
                         else{
-                            tokens.push_back({.type = TokenType::ident, .val = buf});
-                            buf.clear();
+                            tokens.push_back({.type = TokenType::ident, .val = word});
                         }
-                        
-                        // else{
-                        //     std::cerr << "Error in keyword tokenization" << std::endl;
-                        //     std::cout << buf <<" | "<< buf.length() << std::endl;
-                        //     exit(EXIT_FAILURE);
-                        // }
+                        continue;
 
                     }else if(std::isdigit(peek().value()) ){
-                        buf.push_back(consume());
+                        std::size_t start = m_index;
+                        consume();
                         while(peek().has_value() && std::isdigit(peek().value() )){
-                            buf.push_back(consume());
+                            consume();
                         }
-                        tokens.push_back({ .type= TokenType::int_lit, .val = buf});
-                        buf.clear();
+                        std::string_view number(m_src.data() + start, m_index - start);
+                        tokens.push_back({ .type= TokenType::int_lit, .val = number});
                         continue;
 
                     }else if(peek().value() == '('){
@@ -144,7 +144,7 @@ class Tokenizer {
                             tokens.push_back( {.type = TokenType::equal_assign});
                             continue;
                         }
-                    
+
                     }else if(peek().value() == '+'){
                         consume();
                         tokens.push_back( {.type = TokenType::plus});
@@ -200,13 +200,13 @@ class Tokenizer {
                 return tokens;
 
            }
-        
+
     private:
 
-        [[nodiscard]] inline std::optional<char> peek(int ahead = 0) const { 
-            /* 
-            SUPER interesting method def, so let's break it down as this is for learning: 
-            nodiscard means we get compilation warning if we don't use returned value. 
+        [[nodiscard]] inline std::optional<char> peek(int ahead = 0) const {
+            /*
+            SUPER interesting method def, so let's break it down as this is for learning:
+            nodiscard means we get compilation warning if we don't use returned value.
             ahead = 1 means it'll default to 1, but you can overload to specify how many values you want to peek ahead
             the const that follows means this is a CONSTANT method, it cant alter fields in the class
             */
@@ -221,6 +221,6 @@ class Tokenizer {
             return m_src.at(m_index++);
         }
 
-        const std::string m_src;
+        const std::string& m_src;
         size_t m_index = 0;
 };

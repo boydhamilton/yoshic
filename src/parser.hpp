@@ -150,7 +150,7 @@ class Parser {
         }
 
         std::optional<node::Term*> parse_term(){
-             if(peek().has_value() && peek().value().type == TokenType::int_lit){
+             if(peek() && peek()->type == TokenType::int_lit){
 
                 auto expr_int_lit = m_allocator.alloc<node::TermIntLit>();
                 expr_int_lit->int_lit = consume(); // structure is implicit in allocation
@@ -159,14 +159,14 @@ class Parser {
                 term->var = expr_int_lit;
                 return term;
 
-            }else if(peek().has_value() && peek().value().type == TokenType::ident){
+            }else if(peek() && peek()->type == TokenType::ident){
                 auto expr_ident = m_allocator.alloc<node::TermIdent>();
                 expr_ident->ident = consume();
                 
                 auto term = m_allocator.alloc<node::Term>();
                 term->var = expr_ident;
                 return term;
-            }else if(peek().has_value() && peek().value().type == TokenType::open_paren){
+            }else if(peek() && peek()->type == TokenType::open_paren){
                 consume(); // consume open paren
                 auto term_paren = m_allocator.alloc<node::TermParen>();
                 if(auto node_expr = parse_expr() ){
@@ -176,7 +176,7 @@ class Parser {
                     exit(EXIT_FAILURE);
                 }
 
-                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                if(peek() && peek()->type == TokenType::close_paren){
                     consume(); // consume close paren
                 }else{
                     std::cerr << "Expected ')'" << std::endl;
@@ -185,7 +185,7 @@ class Parser {
                 auto term = m_allocator.alloc<node::Term>();
                 term->var = term_paren;
                 return term;
-            }else if(peek().has_value() && peek().value().type == TokenType::exclaim){
+            }else if(peek() && peek()->type == TokenType::exclaim){
                 consume(); // consume !
                 if(auto term = parse_term() ){
                     auto term_exclaim = m_allocator.alloc<node::TermExclaim>();
@@ -194,7 +194,7 @@ class Parser {
                     new_term->var = term_exclaim;
                     return new_term;
                 }
-            }else if(peek().has_value() && peek().value().type == TokenType::sub){
+            }else if(peek() && peek()->type == TokenType::sub){
                 consume(); // consume -
                 if(auto term = parse_term() ){
                     auto term_exclaim = m_allocator.alloc<node::TermNegate>();
@@ -221,9 +221,9 @@ class Parser {
             expr_lhs->var = term_lhs.value();
 
             while(true){
-                std::optional<Token> curr_tok = peek();
+                const Token* curr_tok = peek();
                 std::optional<int> prec;
-                if(curr_tok.has_value()){
+                if(curr_tok){
                     prec = bin_prec(curr_tok->type);
                     if(!prec.has_value() || prec.value() < min_prec){
                         break;
@@ -232,7 +232,7 @@ class Parser {
                     break;
                 }
 
-                Token op = consume(); // consume operator 
+                const Token& op = consume(); // consume operator
                 int next_min_prec = prec.value() + 1;
                 std::optional<node::Expr*> expr_rhs = parse_expr(next_min_prec);
 
@@ -299,10 +299,10 @@ class Parser {
         }
 
         std::optional<node::Scope*> parse_scope(){
-            if(peek().has_value() && peek().value().type == TokenType::open_curly){
+            if(peek() && peek()->type == TokenType::open_curly){
                 consume(); // consume open curly
                 auto scope = m_allocator.alloc<node::Scope>();
-                while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                while(peek() && peek()->type != TokenType::close_curly){
                     if(auto node_stmt = parse_stmt() ){
                         scope->statements.push_back(node_stmt.value());
                     }else{
@@ -310,7 +310,7 @@ class Parser {
                         exit(EXIT_FAILURE);
                     }
                 }
-                if(peek().has_value() && peek().value().type == TokenType::close_curly){
+                if(peek() && peek()->type == TokenType::close_curly){
                     consume(); // consume close curly
                 }else{
                     std::cerr << "Expected '}' at end of scope" << std::endl;
@@ -323,8 +323,8 @@ class Parser {
         }
 
         std::optional<node::Stmt*> parse_stmt(){
-            if(peek().has_value() && peek().value().type == TokenType::exit
-            && peek(1).has_value() ){
+            if(peek() && peek()->type == TokenType::exit
+            && peek(1) ){
 
                 consume();
                 auto stmt_exit = m_allocator.alloc<node::StmtExit>();
@@ -332,7 +332,7 @@ class Parser {
                 if(auto node_expr = parse_expr() ){
                     stmt_exit->expr=node_expr.value();
                 }
-                if(peek().has_value() && peek().value().type == TokenType::semi){
+                if(peek() && peek()->type == TokenType::semi){
                     consume();
                 }else{
                     std::cerr << "Expected ';' in statement exit" << std::endl;
@@ -343,9 +343,9 @@ class Parser {
                 
                 return stmt;
 
-            }else if(peek().has_value() && peek().value().type == TokenType::let 
-            && peek(1).has_value() && peek(1).value().type == TokenType::ident
-            && peek(2).has_value() && peek(2).value().type == TokenType::equal_assign){
+            }else if(peek() && peek()->type == TokenType::let 
+            && peek(1) && peek(1)->type == TokenType::ident
+            && peek(2) && peek(2)->type == TokenType::equal_assign){
 
                 // for var decl we check first three tokens lol really fat if statement
                 consume(); // consuming let
@@ -358,7 +358,7 @@ class Parser {
                     std::cerr << "Invalid expr in statement let" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                if(peek().has_value() && peek().value().type == TokenType::semi){
+                if(peek() && peek()->type == TokenType::semi){
                     consume();
                 }else{
                     std::cerr << "Expected ';' in statement let" << std::endl;
@@ -367,8 +367,8 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_let;
                 return stmt;
-            }else if(peek().has_value() && peek().value().type == TokenType::ident
-            && peek(1).has_value() && peek(1).value().type == TokenType::equal_assign){
+            }else if(peek() && peek()->type == TokenType::ident
+            && peek(1) && peek(1)->type == TokenType::equal_assign){
 
                 auto stmt_let = m_allocator.alloc<node::StmtAssign>();
                 stmt_let->ident = consume(); // consume ident
@@ -376,22 +376,22 @@ class Parser {
                 if(auto node_expr = parse_expr() ){
                     stmt_let->expr = node_expr.value();
                 }else{
-                    std::cerr << "Invalid expr in statement assignment to " << stmt_let->ident.val.value() << std::endl;
+                    std::cerr << "Invalid expr in statement assignment to " << stmt_let->ident.val << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                if(peek().has_value() && peek().value().type == TokenType::semi){
+                if(peek() && peek()->type == TokenType::semi){
                     consume();
                 }else{
-                    std::cerr << "Expected ';' in statement assignment to " << stmt_let->ident.val.value() << std::endl;
+                    std::cerr << "Expected ';' in statement assignment to " << stmt_let->ident.val << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_let;
                 return stmt;
-            }else if(peek().has_value() && peek().value().type == TokenType::open_curly){
+            }else if(peek() && peek()->type == TokenType::open_curly){
                 consume(); // consume open curly
                 auto stmt_scope = m_allocator.alloc<node::Scope>();
-                while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                while(peek() && peek()->type != TokenType::close_curly){
                     if(auto node_stmt = parse_stmt() ){
                         stmt_scope->statements.push_back(node_stmt.value());
                     }else{
@@ -399,7 +399,7 @@ class Parser {
                         exit(EXIT_FAILURE);
                     }
                 }
-                if(peek().has_value() && peek().value().type == TokenType::close_curly){
+                if(peek() && peek()->type == TokenType::close_curly){
                     consume(); // consume close curly
                 }else{
                     std::cerr << "Expected '}' at end of scope" << std::endl;
@@ -408,9 +408,9 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_scope;
                 return stmt;
-            }else if(peek().has_value() && peek().value().type == TokenType::if_kw){
+            }else if(peek() && peek()->type == TokenType::if_kw){
                 consume(); // consume if
-                if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                if(peek() && peek()->type == TokenType::open_paren){
                     consume();
                 }else { 
                     std::cerr << "Expected '(' after 'if'" << std::endl;
@@ -424,7 +424,7 @@ class Parser {
                     exit(EXIT_FAILURE);
                 }
                 
-                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                if(peek() && peek()->type == TokenType::close_paren){
                     consume();
                 }else{
                     std::cerr << "Expected ')' after condition in if statement" << std::endl;
@@ -440,9 +440,9 @@ class Parser {
                 auto stmt = m_allocator.alloc<node::Stmt>();
                 stmt->var = stmt_if;
                 return stmt;
-            }else if(peek().has_value() && peek().value().type == TokenType::while_kw){
+            }else if(peek() && peek()->type == TokenType::while_kw){
                 consume(); // consume while
-                if(peek().has_value() && peek().value().type == TokenType::open_paren){
+                if(peek() && peek()->type == TokenType::open_paren){
                     consume();
                 }else { 
                     std::cerr << "Expected '(' after 'while'" << std::endl;
@@ -456,7 +456,7 @@ class Parser {
                     exit(EXIT_FAILURE);
                 }
                 
-                if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                if(peek() && peek()->type == TokenType::close_paren){
                     consume();
                 }else{
                     std::cerr << "Expected ')' after condition in while statement" << std::endl;
@@ -480,7 +480,7 @@ class Parser {
 
         std::optional<node::Program> parse_program(){
             node::Program prog;
-            while(peek().has_value() ){
+            while(peek() ){
                 if(auto stmt = parse_stmt() ){
                     prog.statements.push_back(stmt.value());
                 }else{
@@ -492,15 +492,27 @@ class Parser {
         }
 
     private:
-        [[nodiscard]] inline std::optional<Token> peek(int ahead = 0) const { 
+        // returns a pointer into m_tokens (nullptr past the end) rather
+        // than a copy: with the old std::optional<Token> return type,
+        // every single lookahead - and this is called from nearly every
+        // parser decision point - copied a whole Token (including its
+        // std::string val) just to check a type tag. m_tokens is const
+        // and never resized after construction, so the pointer stays
+        // valid for the Parser's whole lifetime.
+        [[nodiscard]] inline const Token* peek(int ahead = 0) const {
             if(m_index + ahead >= m_tokens.size()){
-                return {};
+                return nullptr;
             }else{
-                return m_tokens.at(m_index + ahead);
+                return &m_tokens.at(m_index + ahead);
             }
         }
 
-        inline Token consume(){
+        // same idea: a reference into m_tokens, not a copy. Callers that
+        // need to keep the value (e.g. `stmt_let->ident = consume();`)
+        // still copy exactly once, at the point they actually need to;
+        // the many call sites that just skip a token (`consume(); //
+        // consume eq`) now copy nothing at all.
+        inline const Token& consume(){
             return m_tokens.at(m_index++);
         }
         const std::vector<Token> m_tokens;
